@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -8,22 +9,26 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './entities/auth.entity';
-import { Model } from 'mongoose';
+import { Model, UpdateQuery } from 'mongoose';
 import { RefreshToken } from './entities/refresh-token.schema';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from './service/mail.service';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { LoginDto } from './dto/login.dto';
+import { nanoid } from 'nanoid';
 // import ImageKit from 'imagekit';
 const ImageKit = require('imagekit');
 import { Query } from 'express-serve-static-core';
+import { UpdateProfileDto } from './dto/profileUpdate.dto';
+import { ResetToken } from './entities/rest-token.schema';
 @Injectable()
 export class AuthService {
   private imagekit: ImageKit;
   constructor(
     @InjectModel(User.name) private UserModel: Model<User>,
-
+    @InjectModel(ResetToken.name)
+    private ResetTokenModel: Model<ResetToken>,
     @InjectModel(RefreshToken.name)
     private RefreshTokenModel: Model<RefreshToken>,
 
@@ -214,6 +219,113 @@ export class AuthService {
     return {
       user,
     };
+  }
+  async updateProfile(
+    id: string,
+    updateUserDto: UpdateProfileDto,
+  ): Promise<User> {
+    const existingUser = await this.UserModel.findById(id).exec();
+    if (!existingUser) {
+      throw new NotFoundException('User not found');
+    }
+    let profilePicsUrl: string | undefined;
+
+    if (updateUserDto.profilePics) {
+      try {
+        const img = await this.imagekit.upload({
+          file: updateUserDto.profilePics,
+          fileName: `${updateUserDto.firstName}.jpg`,
+          folder: '/profilePics',
+        });
+
+        profilePicsUrl = img.url;
+        updateUserDto.profilePics = profilePicsUrl;
+      } catch (error) {
+        console.error('Error uploading to ImageKit:', error);
+        throw new BadRequestException('Error uploading profile picture');
+      }
+    }
+
+    // const updateQuery: UpdateQuery<User> = updateUserDto;
+    const updateQuery: UpdateQuery<User> = {
+      ...existingUser.toObject(), // Convert existing user to a plain object
+      ...updateUserDto, // Override fields with the new values from updateUserDto
+    };
+    // Update user in MongoDB
+    const user = await this.UserModel.findByIdAndUpdate(id, updateQuery, {
+      new: true,
+    }).exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  async forgotPassword(email: string) {
+    //Check that user exists
+    const user = await this.UserModel.findOne({ email });
+
+    if (user) {
+      //If user exists, generate password reset link
+      // const { nanoid } = await import('nanoid');
+      const expiryDate = new Date();
+      expiryDate.setHours(expiryDate.getHours() + 1);
+
+      const resetToken = nanoid(64);
+      await this.ResetTokenModel.create({
+        token: resetToken,
+        userId: user._id,
+        expiryDate,
+      });
+      //Send the link to the user by email
+      this.mailService.sendPasswordResetEmail(email, resetToken);
+    }
+
+    return {
+      message:
+        'You are a registered User, please check your email for password reset',
+    };
+  }
+
+  async resetPassword(newPassword: string, resetToken: string) {
+    //Find a valid reset token document
+    const token = await this.ResetTokenModel.findOneAndDelete({
+      token: resetToken,
+      expiryDate: { $gte: new Date() },
+    });
+
+    if (!token) {
+      throw new UnauthorizedException('Invalid link');
+    }
+
+    //Change user password (MAKE SURE TO HASH!!)
+    const user = await this.UserModel.findById(token.userId);
+    if (!user) {
+      throw new InternalServerErrorException();
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+  }
+  async changePassword(userId, oldPassword: string, newPassword: string) {
+    //Find the user
+    const user = await this.UserModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found...');
+    }
+
+    //Compare the old password with the password in DB
+    const passwordMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!passwordMatch) {
+      throw new UnauthorizedException('Wrong credentials');
+    }
+
+    //Change user's password
+    const newHashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = newHashedPassword;
+    await user.save();
   }
 
   update(id: number, updateAuthDto: UpdateAuthDto) {

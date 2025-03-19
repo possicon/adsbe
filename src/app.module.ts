@@ -7,6 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import config from './config/config';
 import { User, UserSchema } from './auth/entities/auth.entity';
+import { CreativeCategoryModule } from './creative-category/creative-category.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -25,6 +26,7 @@ import { User, UserSchema } from './auth/entities/auth.entity';
     MongooseModule.forRoot(process.env.MONGO_URI),
     // MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     AuthModule,
+    CreativeCategoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -11,6 +11,7 @@ import {
   Query,
   UseGuards,
   Req,
+  Put,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
@@ -20,6 +21,9 @@ import { LoginDto } from './dto/login.dto';
 import { User } from './entities/auth.entity';
 import { Query as ExpressQuery } from 'express-serve-static-core';
 import { UserAuthGuard } from './guards/auth.guard';
+import { UpdateProfileDto } from './dto/profileUpdate.dto';
+import { ForgotPasswordDto } from './dto/forget-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('users')
 export class AuthController {
@@ -54,6 +58,32 @@ export class AuthController {
     const id = req.userId;
 
     return this.authService.findUserProfile(id);
+  }
+  @UseGuards(UserAuthGuard)
+  @Patch('profile/update')
+  @UseInterceptors(FileInterceptor('profilePics'))
+  updateProfile(
+    @Req() req,
+    // @Param('id') id: string,
+    @Body() updateUserDto: UpdateProfileDto,
+    @UploadedFile() profilePics?: Express.Multer.File,
+  ) {
+    const id = req.userId;
+    return this.authService.updateProfile(id, updateUserDto);
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto.email);
+  }
+
+  @Patch('reset-password')
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    await this.authService.resetPassword(
+      resetPasswordDto.newPassword,
+      resetPasswordDto.resetToken,
+    );
+    return { message: 'New Password changed successfully' };
   }
 
   @Patch(':id')
