@@ -35,7 +35,7 @@ export class User extends Document {
   @Prop({ required: true, unique: false })
   phoneNumber: string;
 
-  @Prop({ enum: ['Vendor', 'User'], default: 'User' })
+  @Prop({ enum: ['Customer'], default: 'Customer' })
   userType: string;
 
   @Prop({ type: Address }) // Explicitly define the type
