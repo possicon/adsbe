@@ -1,9 +1,13 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateCretiveProductDto } from './dto/create-cretive-product.dto';
 import { UpdateCretiveProductDto } from './dto/update-cretive-product.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { CreativeProducts } from './entities/cretive-product.entity';
-import { Model } from 'mongoose';
+import { Model, UpdateQuery } from 'mongoose';
 import { Query } from 'express-serve-static-core';
 const ImageKit = require('imagekit');
 @Injectable()
@@ -30,7 +34,7 @@ export class CretiveProductsService {
     const nameExits = await this.CreativeProductsModel.findOne({
       title,
       category,
-      postedBy,
+      postedBy: userId,
     });
     if (nameExits) {
       throw new BadRequestException('Creatives already been created');
@@ -91,8 +95,75 @@ export class CretiveProductsService {
     return data;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} cretiveProduct`;
+  async findOne(id: string) {
+    const data = await this.CreativeProductsModel.findById(id);
+    if (!data) {
+      throw new BadRequestException(`Creative with ${id} not found`);
+    }
+
+    return data;
+  }
+
+  async updateProduct(
+    id: string,
+
+    updateEventDto: UpdateCretiveProductDto,
+  ) {
+    const existingEvent = await this.CreativeProductsModel.findById(id).exec();
+    if (!existingEvent) {
+      throw new NotFoundException('Event not found');
+    }
+
+    let imageUrls: string[] = existingEvent.fileUrl || []; // Start with existing image URLs
+
+    if (updateEventDto.fileUrl) {
+      try {
+        const uploadedImages = await Promise.all(
+          updateEventDto.fileUrl.map(async (image) => {
+            const uploadResponse = await this.imagekit.upload({
+              file: image,
+              fileName: `${updateEventDto.title}.jpg`,
+              folder: '/productUpdate',
+            });
+            return uploadResponse.url;
+          }),
+        );
+        imageUrls = [...imageUrls, ...uploadedImages]; // Append new images to existing URLs
+        updateEventDto.fileUrl = imageUrls;
+      } catch (error) {
+        console.error('Error uploading to ImageKit:', error);
+        throw new BadRequestException('Error uploading images');
+      }
+    }
+
+    const updateQuery: UpdateQuery<CreativeProducts> = {
+      ...existingEvent.toObject(),
+      ...updateEventDto,
+      imageUrl: imageUrls,
+    };
+
+    const updatedEvent = await this.CreativeProductsModel.findByIdAndUpdate(
+      id,
+      updateQuery,
+      {
+        new: true,
+      },
+    ).exec();
+
+    if (!updatedEvent) {
+      throw new NotFoundException('Event not found');
+    }
+
+    return updatedEvent;
+  }
+
+  async deleteProduct(id: string) {
+    const product = await this.CreativeProductsModel.findByIdAndDelete(id);
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return { message: 'Product deleted successfully' };
   }
 
   update(id: number, updateCretiveProductDto: UpdateCretiveProductDto) {

@@ -28,7 +28,7 @@ export class CreativeProducts extends Document {
     type: [String],
     required: false,
     validate: [
-      (val: string[]) => val.length <= 5,
+      (val: string[]) => val.length <= 10,
       'You can upload a maximum of 5 images',
     ],
   })

@@ -45,9 +45,18 @@ export class CretiveProductsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.cretiveProductsService.findOne(+id);
+    return this.cretiveProductsService.findOne(id);
   }
-
+  @UseGuards(UserAuthGuard)
+  @Patch(':id')
+  updateProduct(
+    @Param('id') id: string,
+    @Body() updateEventDto: UpdateCretiveProductDto,
+    @Req() req,
+  ) {
+    const userId = req.userId;
+    return this.cretiveProductsService.updateProduct(id, updateEventDto);
+  }
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -58,6 +67,6 @@ export class CretiveProductsController {
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.cretiveProductsService.remove(+id);
+    return this.cretiveProductsService.deleteProduct(id);
   }
 }

@@ -9,6 +9,7 @@ import config from './config/config';
 import { User, UserSchema } from './auth/entities/auth.entity';
 import { CreativeCategoryModule } from './creative-category/creative-category.module';
 import { CretiveProductsModule } from './cretive-products/cretive-products.module';
+import { AdminModule } from './admin/admin.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -29,6 +30,7 @@ import { CretiveProductsModule } from './cretive-products/cretive-products.modul
     AuthModule,
     CreativeCategoryModule,
     CretiveProductsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
