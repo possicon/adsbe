@@ -8,6 +8,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import config from './config/config';
 import { User, UserSchema } from './auth/entities/auth.entity';
 import { CreativeCategoryModule } from './creative-category/creative-category.module';
+import { CretiveProductsModule } from './cretive-products/cretive-products.module';
+import { AdminModule } from './admin/admin.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -27,6 +29,8 @@ import { CreativeCategoryModule } from './creative-category/creative-category.mo
     // MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     AuthModule,
     CreativeCategoryModule,
+    CretiveProductsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
