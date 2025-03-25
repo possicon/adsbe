@@ -6,6 +6,7 @@ import {
   CreativeProducts,
   CreativeProductsSchema,
 } from './entities/cretive-product.entity';
+import { AdminUser, AdminUserSchema } from 'src/admin/entities/admin.entity';
 
 @Module({
   imports: [
@@ -13,6 +14,10 @@ import {
       {
         name: CreativeProducts.name,
         schema: CreativeProductsSchema,
+      },
+      {
+        name: AdminUser.name,
+        schema: AdminUserSchema,
       },
     ]),
   ],

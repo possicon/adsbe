@@ -65,8 +65,10 @@ export class CretiveProductsController {
     return this.cretiveProductsService.update(+id, updateCretiveProductDto);
   }
 
+  @UseGuards(UserAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.cretiveProductsService.deleteProduct(id);
+  remove(@Param('id') id: string, @Req() req) {
+    const userId: string = req.userId;
+    return this.cretiveProductsService.deleteProduct(id, userId);
   }
 }

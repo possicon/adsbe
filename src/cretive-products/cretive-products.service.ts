@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -9,6 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { CreativeProducts } from './entities/cretive-product.entity';
 import { Model, UpdateQuery } from 'mongoose';
 import { Query } from 'express-serve-static-core';
+import { AdminUser } from 'src/admin/entities/admin.entity';
 const ImageKit = require('imagekit');
 @Injectable()
 export class CretiveProductsService {
@@ -16,6 +18,8 @@ export class CretiveProductsService {
   constructor(
     @InjectModel(CreativeProducts.name)
     private CreativeProductsModel: Model<CreativeProducts>,
+    @InjectModel(AdminUser.name)
+    private readonly AdminUserModel: Model<AdminUser>,
   ) {
     this.imagekit = new ImageKit({
       publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
@@ -157,7 +161,7 @@ export class CretiveProductsService {
     return updatedEvent;
   }
 
-  async deleteProduct(id: string) {
+  async delete(id: string, userId: string) {
     const product = await this.CreativeProductsModel.findByIdAndDelete(id);
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -165,7 +169,23 @@ export class CretiveProductsService {
 
     return { message: 'Product deleted successfully' };
   }
+  async deleteProduct(id: string, userId: string) {
+    const product = await this.CreativeProductsModel.findById(id);
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
 
+    // Check if the user is an admin
+    const adminUser = await this.AdminUserModel.findOne({ userId });
+    if (adminUser && adminUser.isAdmin === true) {
+      await this.CreativeProductsModel.findByIdAndDelete(id);
+      return { message: 'Event deleted successfully by admin' };
+    }
+
+    throw new ForbiddenException(
+      'You are not authorized to delete this product',
+    );
+  }
   update(id: number, updateCretiveProductDto: UpdateCretiveProductDto) {
     return `This action updates a #${id} cretiveProduct`;
   }
