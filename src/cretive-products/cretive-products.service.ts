@@ -35,6 +35,12 @@ export class CretiveProductsService {
     console.log(userId);
     const { title, description, category, price, fileType, fileUrl, postedBy } =
       createCretiveProductDto;
+    const adminUser: any = await this.AdminUserModel.findOne({ userId });
+    if (!adminUser || adminUser.isAdmin !== true) {
+      throw new BadRequestException(
+        'Only Admins are Authorized to create Product',
+      );
+    }
     const nameExits = await this.CreativeProductsModel.findOne({
       title,
       category,
@@ -43,6 +49,7 @@ export class CretiveProductsService {
     if (nameExits) {
       throw new BadRequestException('Creatives already been created');
     }
+
     const imageUrls: string[] = [];
     for (const image of fileUrl) {
       const img = await this.imagekit.upload({
@@ -110,9 +117,15 @@ export class CretiveProductsService {
 
   async updateProduct(
     id: string,
-
+    userId: string,
     updateEventDto: UpdateCretiveProductDto,
   ) {
+    const adminUser: any = await this.AdminUserModel.findOne({ userId });
+    if (!adminUser || adminUser.isAdmin !== true) {
+      throw new BadRequestException(
+        'Only Admins are Authorized to create Product',
+      );
+    }
     const existingEvent = await this.CreativeProductsModel.findById(id).exec();
     if (!existingEvent) {
       throw new NotFoundException('Event not found');

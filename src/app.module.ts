@@ -10,6 +10,7 @@ import { User, UserSchema } from './auth/entities/auth.entity';
 import { CreativeCategoryModule } from './creative-category/creative-category.module';
 import { CretiveProductsModule } from './cretive-products/cretive-products.module';
 import { AdminModule } from './admin/admin.module';
+import { OrderModule } from './order/order.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -31,6 +32,7 @@ import { AdminModule } from './admin/admin.module';
     CreativeCategoryModule,
     CretiveProductsModule,
     AdminModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [AppService],
