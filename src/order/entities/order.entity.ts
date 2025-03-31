@@ -108,14 +108,6 @@ export class Order extends Document {
   @Prop({ required: false })
   amountPaid: string;
 
-  @Prop({
-    required: false,
-    default: function () {
-      return (parseFloat(this.amountPaid) || 0) * 0.1;
-    },
-  })
-  commission: number;
-
   @Prop({ required: false })
   date: String;
 }

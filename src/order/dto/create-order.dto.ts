@@ -11,7 +11,7 @@ import { Type } from 'class-transformer';
 class OrderItemDTO {
   @IsNotEmpty()
   @IsString()
-  eventId: string;
+  productId: string;
 
   @IsNumber()
   totalQuantity: number;
