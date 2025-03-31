@@ -143,15 +143,25 @@ export class AdminService {
       })
       .exec();
   }
-  async findAllAdmins(): Promise<AdminUser[]> {
-    return this.AdminUserModel.find({ isAdmin: true })
+  async findAllAdmins(query: Query): Promise<any> {
+    const resPerPage = 10;
+    const currentPage = Number(query.page) || 1;
+    const skip = resPerPage * (currentPage - 1);
+    const data = await this.AdminUserModel.find({ isAdmin: true })
       .sort({ createdAt: -1 })
       .populate({
         path: 'userId',
-        select: '-password', // Exclude the password field
+        select: '-password',
       })
+
+      .limit(resPerPage)
+      .skip(skip)
+
       .exec();
+
+    return data;
   }
+
   async findByUserId(userId: string): Promise<AdminUser> {
     const adminUser = await this.AdminUserModel.findOne({ userId }).exec();
 

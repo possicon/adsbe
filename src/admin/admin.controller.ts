@@ -52,8 +52,8 @@ export class AdminController {
   }
 
   @Get('all/admins')
-  findAllAdmins() {
-    return this.adminService.findAllAdmins();
+  findAllAdmins(@Query() query: ExpressQuery) {
+    return this.adminService.findAllAdmins(query);
   }
 
   @UseGuards(UserAuthGuard)

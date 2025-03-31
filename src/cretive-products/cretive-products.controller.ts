@@ -54,8 +54,12 @@ export class CretiveProductsController {
     @Body() updateEventDto: UpdateCretiveProductDto,
     @Req() req,
   ) {
-    const userId = req.userId;
-    return this.cretiveProductsService.updateProduct(id, updateEventDto);
+    const userId: string = req.userId;
+    return this.cretiveProductsService.updateProduct(
+      id,
+      userId,
+      updateEventDto,
+    );
   }
   @Patch(':id')
   update(
