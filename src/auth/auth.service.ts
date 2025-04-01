@@ -16,7 +16,7 @@ import { MailService } from './service/mail.service';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { LoginDto } from './dto/login.dto';
-import { nanoid } from 'nanoid';
+// import { nanoid } from 'nanoid';
 // const nanoid = require('nanoid');
 // import ImageKit from 'imagekit';
 const ImageKit = require('imagekit');
@@ -274,7 +274,8 @@ export class AuthService {
       const expiryDate = new Date();
       expiryDate.setHours(expiryDate.getHours() + 1);
 
-      const resetToken = nanoid(64);
+      // const resetToken = nanoid(64);
+      const resetToken = uuidv4();
       await this.ResetTokenModel.create({
         token: resetToken,
         userId: user._id,
