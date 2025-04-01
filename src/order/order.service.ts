@@ -209,13 +209,70 @@ export class OrderService {
       .exec();
     return data;
   }
+  async findAllLoginUserOrderPagination(
+    query: Query,
+    userId: string,
+  ): Promise<Order[]> {
+    const resPerPage = 10;
+    const currentPage = Number(query.page) || 1;
+    const skip = resPerPage * (currentPage - 1);
+    const data = await this.OrderModel.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(resPerPage)
+      .skip(skip)
+      .populate({
+        path: 'userId',
+        select: '-password',
+      })
+      .populate({
+        path: 'orderItems.productId',
+        model: 'CreativeProducts',
+      })
+      .exec();
+    if (!data) {
+      throw new BadRequestException('No Order found for this user');
+    }
+    return data;
+  }
 
+  async findAllUserOrderPagination(
+    query: Query,
+    userId: string,
+  ): Promise<Order[]> {
+    const resPerPage = 10;
+    const currentPage = Number(query.page) || 1;
+    const skip = resPerPage * (currentPage - 1);
+    const data = await this.OrderModel.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(resPerPage)
+      .skip(skip)
+      .populate({
+        path: 'userId',
+        select: '-password', // Exclude the password field
+      })
+      .populate({
+        path: 'orderItems.productId',
+        model: 'CreativeProducts',
+      })
+      .exec();
+    return data;
+  }
   findAll() {
     return `This action returns all order`;
   }
 
   async findOne(id: string) {
-    const order = await this.OrderModel.findById(id);
+    const order = await this.OrderModel.findById(id)
+      .populate({
+        path: 'orderItems.productId',
+        model: 'CreativeProducts',
+      })
+      .populate({
+        path: 'userId',
+        select: '-password', // Exclude the password field
+      })
+
+      .exec();
     if (!order) {
       throw new BadRequestException(`Order with ${id} not found`);
     }

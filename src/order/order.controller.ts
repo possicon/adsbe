@@ -53,6 +53,23 @@ export class OrderController {
   async getAllOrdersPagination(@Query() query: ExpressQuery): Promise<Order[]> {
     return this.orderService.findAllOrderPagination(query);
   }
+
+  @UseGuards(UserAuthGuard)
+  @Get('pag/all/user')
+  async getAllLoginUserOrderPagination(
+    @Query() query: ExpressQuery,
+    @Req() req,
+  ): Promise<Order[]> {
+    const userId = req.userId;
+    return this.orderService.findAllLoginUserOrderPagination(query, userId);
+  }
+  @Get('pag/all/:userId')
+  async findAllUserOrderPagination(
+    @Query() query: ExpressQuery,
+    @Param('userId') userId: string,
+  ): Promise<Order[]> {
+    return this.orderService.findAllUserOrderPagination(query, userId);
+  }
   @Get()
   findAll() {
     return this.orderService.findAll();
