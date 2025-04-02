@@ -27,10 +27,10 @@ export class CreativeProducts extends Document {
   @Prop({
     type: [String],
     required: false,
-    validate: [
-      (val: string[]) => val.length <= 10,
-      'You can upload a maximum of 5 images',
-    ],
+    validate: {
+      validator: (val: string[]) => val.length <= 5,
+      message: 'You can upload a maximum of 5 images',
+    },
   })
   fileUrl: string[];
 
