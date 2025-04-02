@@ -8,7 +8,7 @@ import { CreateCretiveProductDto } from './dto/create-cretive-product.dto';
 import { UpdateCretiveProductDto } from './dto/update-cretive-product.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { CreativeProducts } from './entities/cretive-product.entity';
-import { Model, UpdateQuery } from 'mongoose';
+import { FilterQuery, Model, UpdateQuery } from 'mongoose';
 import { Query } from 'express-serve-static-core';
 import { AdminUser } from 'src/admin/entities/admin.entity';
 const ImageKit = require('imagekit');
@@ -199,11 +199,42 @@ export class CretiveProductsService {
       'You are not authorized to delete this product',
     );
   }
-  update(id: number, updateCretiveProductDto: UpdateCretiveProductDto) {
-    return `This action updates a #${id} cretiveProduct`;
-  }
+  async findProductsByCategoryPagination(
+    // query: Record<string, any>,
+    query: Query,
+    category: string,
+  ): Promise<CreativeProducts[]> {
+    const resPerPage = 10; // Number of results per page
+    const currentPage = Number(query.page) || 1; // Default to page 1 if not provided
+    const skip = resPerPage * (currentPage - 1);
 
-  remove(id: number) {
-    return `This action removes a #${id} cretiveProduct`;
+    // Ensure the query matches the database schema
+    const data = await this.CreativeProductsModel.find({ category })
+      .sort({ createdAt: -1 })
+      .limit(resPerPage)
+      .skip(skip)
+      .populate({
+        path: 'postedBy',
+        select: '-password', // Exclude sensitive fields
+      })
+      .exec();
+
+    return data;
+  }
+  /////search for events
+  async searchEvents(query: any): Promise<CreativeProducts[]> {
+    const filter: FilterQuery<CreativeProducts> = {};
+
+    if (query.query && query.query !== '*') {
+      const searchRegex = { $regex: query.query, $options: 'i' };
+      filter.$or = [{ title: searchRegex }, { description: searchRegex }];
+    }
+
+    return this.CreativeProductsModel.find(filter)
+      .populate({
+        path: 'postedBy',
+        select: '-password', // Exclude the password field
+      })
+      .exec();
   }
 }

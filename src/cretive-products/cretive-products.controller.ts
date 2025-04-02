@@ -61,18 +61,25 @@ export class CretiveProductsController {
       updateEventDto,
     );
   }
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateCretiveProductDto: UpdateCretiveProductDto,
-  ) {
-    return this.cretiveProductsService.update(+id, updateCretiveProductDto);
-  }
 
   @UseGuards(UserAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req) {
     const userId: string = req.userId;
     return this.cretiveProductsService.deleteProduct(id, userId);
+  }
+  @Get('category/:categoryName/all')
+  async findEventsByCategoryPagination(
+    @Query() query: Record<string, any>, // Handles query parameters
+    @Param('categoryName') categoryName: string, // Handles URL parameter
+  ): Promise<CreativeProducts[]> {
+    return this.cretiveProductsService.findProductsByCategoryPagination(
+      query,
+      categoryName,
+    );
+  }
+  @Get('all/search')
+  async searchEvents(@Query() query: any): Promise<CreativeProducts[]> {
+    return this.cretiveProductsService.searchEvents(query);
   }
 }
