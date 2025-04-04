@@ -1,6 +1,6 @@
 export class CretiveProduct {}
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document, Model, Types } from 'mongoose';
 import slugify from 'slugify';
 
 @Schema({ timestamps: true })
@@ -53,11 +53,22 @@ export class CreativeProducts extends Document {
 const CreativeProductsSchema = SchemaFactory.createForClass(CreativeProducts);
 
 // Generate slug from the title before saving
-CreativeProductsSchema.pre<CreativeProducts>('save', function (next) {
-  if (!this.slug) {
-    this.slug = slugify(this.title, { lower: true, strict: true });
+
+CreativeProductsSchema.pre<CreativeProducts>('save', async function (next) {
+  if (this.isModified('title')) {
+    const model = this.constructor as Model<CreativeProducts>;
+    let baseSlug = slugify(this.title, { lower: true, strict: true });
+    let slug = baseSlug;
+    let count = 1;
+
+    // Ensure uniqueness
+    while (await model.exists({ slug, _id: { $ne: this._id } })) {
+      slug = `${baseSlug}-${count++}`;
+    }
+
+    this.slug = slug;
   }
+
   next();
 });
-
 export { CreativeProductsSchema };

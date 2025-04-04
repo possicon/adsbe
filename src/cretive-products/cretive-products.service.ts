@@ -12,6 +12,7 @@ import { FilterQuery, Model, UpdateQuery } from 'mongoose';
 import { Query } from 'express-serve-static-core';
 import { AdminUser } from 'src/admin/entities/admin.entity';
 const ImageKit = require('imagekit');
+import slugify from 'slugify';
 @Injectable()
 export class CretiveProductsService {
   private imagekit: ImageKit;
@@ -152,7 +153,22 @@ export class CretiveProductsService {
         throw new BadRequestException('Error uploading images');
       }
     }
+    if (updateEventDto.title && updateEventDto.title !== existingEvent.title) {
+      const baseSlug = slugify(updateEventDto.title, {
+        lower: true,
+        strict: true,
+      });
 
+      let uniqueSlug = baseSlug;
+      let suffix = 1;
+
+      // Ensure uniqueness
+      while (await this.CreativeProductsModel.findOne({ slug: uniqueSlug })) {
+        uniqueSlug = `${baseSlug}-${suffix++}`;
+      }
+
+      updateEventDto.slug = uniqueSlug;
+    }
     const updateQuery: UpdateQuery<CreativeProducts> = {
       ...existingEvent.toObject(),
       ...updateEventDto,
@@ -192,7 +208,7 @@ export class CretiveProductsService {
     const adminUser = await this.AdminUserModel.findOne({ userId });
     if (adminUser && adminUser.isAdmin === true) {
       await this.CreativeProductsModel.findByIdAndDelete(id);
-      return { message: 'Event deleted successfully by admin' };
+      return { message: 'Product deleted successfully by admin' };
     }
 
     throw new ForbiddenException(
@@ -236,5 +252,12 @@ export class CretiveProductsService {
         select: '-password', // Exclude the password field
       })
       .exec();
+  }
+  async findBySlug(slug: string): Promise<CreativeProducts> {
+    const product = await this.CreativeProductsModel.findOne({ slug }).exec();
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+    return product;
   }
 }

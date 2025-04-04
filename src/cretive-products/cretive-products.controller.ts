@@ -82,4 +82,8 @@ export class CretiveProductsController {
   async searchEvents(@Query() query: any): Promise<CreativeProducts[]> {
     return this.cretiveProductsService.searchEvents(query);
   }
+  @Get('product/:slug')
+  async getEventBySlug(@Param('slug') slug: string): Promise<CreativeProducts> {
+    return this.cretiveProductsService.findBySlug(slug);
+  }
 }
