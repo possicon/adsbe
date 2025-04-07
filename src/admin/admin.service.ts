@@ -19,11 +19,16 @@ import { LoginDto } from 'src/auth/dto/login.dto';
 import { RefreshToken } from 'src/auth/entities/refresh-token.schema';
 import * as bcrypt from 'bcrypt';
 import { User } from 'src/auth/entities/auth.entity';
+import { CreativeProducts } from 'src/cretive-products/entities/cretive-product.entity';
+import { Order } from 'src/order/entities/order.entity';
 @Injectable()
 export class AdminService {
   constructor(
     @InjectModel(AdminUser.name)
     private readonly AdminUserModel: Model<AdminUser>,
+    @InjectModel(CreativeProducts.name)
+    private CreativeProductsModel: Model<CreativeProducts>,
+    @InjectModel(Order.name) private OrderModel: Model<Order>,
     @InjectModel(User.name) private UserModel: Model<User>,
     @InjectModel(RefreshToken.name)
     private RefreshTokenModel: Model<RefreshToken>,
@@ -201,42 +206,6 @@ export class AdminService {
 
     return updatedAdmin;
   }
-  async ToggletoMakeUserAdmin(userId: string): Promise<AdminUser> {
-    const user = await this.UserModel.findById(userId);
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    let adminUser = await this.AdminUserModel.findOne({ userId });
-
-    if (!adminUser) {
-      // If user is not in the admin collection, create an admin entry
-      adminUser = await this.AdminUserModel.create({
-        userId,
-        isAdmin: true,
-      });
-
-      // Also update the user model (assuming there is an isAdmin field)
-      await this.UserModel.findByIdAndUpdate(userId, { isAdmin: true });
-
-      return adminUser;
-    }
-
-    // If already in the admin collection, toggle isAdmin status
-    const newAdminStatus = !adminUser.isAdmin;
-
-    // Update the AdminUserModel
-    const updatedAdmin = await this.AdminUserModel.findOneAndUpdate(
-      { userId },
-      { $set: { isAdmin: newAdminStatus } },
-      { new: true },
-    );
-
-    // Update the UserModel accordingly
-    await this.UserModel.findByIdAndUpdate(userId, { isAdmin: newAdminStatus });
-
-    return updatedAdmin;
-  }
 
   async update(
     id: string,
@@ -345,5 +314,79 @@ export class AdminService {
       throw new NotFoundException(' User not found');
     }
   }
+
+  async ToggletoMakeUserAdmin(userId: string): Promise<AdminUser> {
+    const user = await this.UserModel.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    let adminUser = await this.AdminUserModel.findOne({ userId });
+
+    if (!adminUser) {
+      // If user is not in the admin collection, create an admin entry
+      adminUser = await this.AdminUserModel.create({
+        userId,
+        isAdmin: true,
+      });
+
+      // Also update the user model (assuming there is an isAdmin field)
+      await this.UserModel.findByIdAndUpdate(userId, { isAdmin: true });
+
+      return adminUser;
+    }
+
+    // If already in the admin collection, toggle isAdmin status
+    const newAdminStatus = !adminUser.isAdmin;
+
+    // Update the AdminUserModel
+    const updatedAdmin = await this.AdminUserModel.findOneAndUpdate(
+      { userId },
+      { $set: { isAdmin: newAdminStatus } },
+      { new: true },
+    );
+
+    // Update the UserModel accordingly
+    await this.UserModel.findByIdAndUpdate(userId, { isAdmin: newAdminStatus });
+
+    return updatedAdmin;
+  }
+
   ////admin dashboard
+  async countAll(): Promise<{
+    totalProducts: number;
+    totalUsers: number;
+    totalAdmins: number;
+    totalOrders: number;
+    totalPaidOrders: number;
+    totalUnPaidOrders: number;
+  }> {
+    const [
+      totalProducts,
+      totalUsers,
+
+      totalAdmins,
+      totalOrders,
+      totalPaidOrders,
+      totalUnPaidOrders,
+    ] = await Promise.all([
+      this.CreativeProductsModel.countDocuments().exec(),
+      this.UserModel.countDocuments().exec(),
+
+      this.AdminUserModel.countDocuments({ isAdmin: true }).exec(),
+      this.OrderModel.countDocuments().exec(),
+      this.OrderModel.countDocuments({ isPaid: true }).exec(),
+      this.OrderModel.countDocuments({ isPaid: false }).exec(),
+    ]);
+
+    return {
+      totalProducts,
+      totalUsers,
+
+      totalAdmins,
+      totalOrders,
+      totalPaidOrders,
+      totalUnPaidOrders,
+    };
+  }
 }

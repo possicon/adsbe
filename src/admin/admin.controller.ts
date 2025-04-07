@@ -192,4 +192,17 @@ export class AdminController {
     }
     return this.adminService.findAllNotSuspendedUser(query);
   }
+
+  // dashboard metrics
+  @UseGuards(UserAuthGuard)
+  @Get('dashboard/counts')
+  async getCounts(@Req() req) {
+    const user = req.userId;
+    const adminAuthority = await this.adminService.getAdminByUserId(user);
+
+    if (adminAuthority.userId.toString() !== user) {
+      throw new ForbiddenException('Only admins can perform this action');
+    }
+    return this.adminService.countAll();
+  }
 }

@@ -12,6 +12,11 @@ import {
   ResetToken,
   ResetTokenSchema,
 } from 'src/auth/entities/rest-token.schema';
+import {
+  CreativeProducts,
+  CreativeProductsSchema,
+} from 'src/cretive-products/entities/cretive-product.entity';
+import { Order, OrderSchema } from 'src/order/entities/order.entity';
 
 @Module({
   imports: [
@@ -31,6 +36,14 @@ import {
       {
         name: ResetToken.name,
         schema: ResetTokenSchema,
+      },
+      {
+        name: CreativeProducts.name,
+        schema: CreativeProductsSchema,
+      },
+      {
+        name: Order.name,
+        schema: OrderSchema,
       },
     ]),
   ],
