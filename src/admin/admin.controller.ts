@@ -55,7 +55,20 @@ export class AdminController {
   findAllAdmins(@Query() query: ExpressQuery) {
     return this.adminService.findAllAdmins(query);
   }
+  @Get('all/cretive-products/:userId')
+  findProductsPostedbyUserId(
+    @Param('userId') userId: string,
+    @Query() query: ExpressQuery,
+  ) {
+    return this.adminService.findProductsPostedbyUserId(query, userId);
+  }
 
+  @UseGuards(UserAuthGuard)
+  @Get('all/cretive-products')
+  findProductsPostedbyLoginUser(@Query() query: ExpressQuery, @Req() req) {
+    const userId: string = req.userId;
+    return this.adminService.findProductsPostedbyLoginUser(query, userId);
+  }
   @UseGuards(UserAuthGuard)
   @Patch(':id')
   async update(

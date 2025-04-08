@@ -389,4 +389,51 @@ export class AdminService {
       totalUnPaidOrders,
     };
   }
+
+  ///
+  async findProductsPostedbyUserId(
+    // query: Record<string, any>,
+    query: Query,
+    userId: string,
+  ): Promise<CreativeProducts[]> {
+    const resPerPage = 10; // Number of results per page
+    const currentPage = Number(query.page) || 1; // Default to page 1 if not provided
+    const skip = resPerPage * (currentPage - 1);
+
+    // Ensure the query matches the database schema
+    const data = await this.CreativeProductsModel.find({ postedBy: userId })
+      .sort({ createdAt: -1 })
+      .limit(resPerPage)
+      .skip(skip)
+      .populate({
+        path: 'postedBy',
+        select: '-password', // Exclude sensitive fields
+      })
+      .exec();
+
+    return data;
+  }
+
+  async findProductsPostedbyLoginUser(
+    // query: Record<string, any>,
+    query: Query,
+    userId: string,
+  ): Promise<CreativeProducts[]> {
+    const resPerPage = 10; // Number of results per page
+    const currentPage = Number(query.page) || 1; // Default to page 1 if not provided
+    const skip = resPerPage * (currentPage - 1);
+
+    // Ensure the query matches the database schema
+    const data = await this.CreativeProductsModel.find({ postedBy: userId })
+      .sort({ createdAt: -1 })
+      .limit(resPerPage)
+      .skip(skip)
+      .populate({
+        path: 'postedBy',
+        select: '-password', // Exclude sensitive fields
+      })
+      .exec();
+
+    return data;
+  }
 }
