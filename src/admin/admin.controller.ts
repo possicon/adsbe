@@ -55,7 +55,20 @@ export class AdminController {
   findAllAdmins(@Query() query: ExpressQuery) {
     return this.adminService.findAllAdmins(query);
   }
+  @Get('all/cretive-products/:userId')
+  findProductsPostedbyUserId(
+    @Param('userId') userId: string,
+    @Query() query: ExpressQuery,
+  ) {
+    return this.adminService.findProductsPostedbyUserId(query, userId);
+  }
 
+  @UseGuards(UserAuthGuard)
+  @Get('all/cretive-products')
+  findProductsPostedbyLoginUser(@Query() query: ExpressQuery, @Req() req) {
+    const userId: string = req.userId;
+    return this.adminService.findProductsPostedbyLoginUser(query, userId);
+  }
   @UseGuards(UserAuthGuard)
   @Patch(':id')
   async update(
@@ -191,5 +204,18 @@ export class AdminController {
       throw new ForbiddenException('Only admins can perform this action');
     }
     return this.adminService.findAllNotSuspendedUser(query);
+  }
+
+  // dashboard metrics
+  @UseGuards(UserAuthGuard)
+  @Get('dashboard/counts')
+  async getCounts(@Req() req) {
+    const user = req.userId;
+    const adminAuthority = await this.adminService.getAdminByUserId(user);
+
+    if (adminAuthority.userId.toString() !== user) {
+      throw new ForbiddenException('Only admins can perform this action');
+    }
+    return this.adminService.countAll();
   }
 }
