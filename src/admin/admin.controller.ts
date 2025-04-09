@@ -218,4 +218,43 @@ export class AdminController {
     }
     return this.adminService.countAll();
   }
+
+  @UseGuards(UserAuthGuard)
+  @Get('creative-products/analysis/counts')
+  async countAllProductAnalysis(@Req() req): Promise<{
+    eventCount: number;
+
+    totalEarning: number;
+    totalOrders: number;
+    totalPaidOrders: number;
+    totalUnpPaidOrders: number;
+    totalCustomers: number;
+  }> {
+    const user = req.userId;
+    const adminAuthority = await this.adminService.getAdminByUserId(user);
+    if (adminAuthority.userId.toString() !== user) {
+      throw new ForbiddenException('Only admins can perform this action');
+    }
+    return this.adminService.countAllProductAnalysis();
+  }
+
+  @UseGuards(UserAuthGuard)
+  @Get('creative-products/:productId/analysis/counts')
+  async countProductIdAnalysis(
+    @Param('productId') productId: string,
+    @Req() req,
+  ): Promise<{
+    totalEarning: number;
+    totalOrders: number;
+    totalPaidOrders: number;
+    totalUnpPaidOrders: number;
+    totalCustomers: number;
+  }> {
+    const user = req.userId;
+    const adminAuthority = await this.adminService.getAdminByUserId(user);
+    if (adminAuthority.userId.toString() !== user) {
+      throw new ForbiddenException('Only admins can perform this action');
+    }
+    return this.adminService.countProductIdAnalysis(productId);
+  }
 }
