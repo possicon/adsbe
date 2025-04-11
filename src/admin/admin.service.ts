@@ -532,16 +532,16 @@ export class AdminService {
 
     // Count total orders linked to any of these events
     const totalOrders = await this.OrderModel.countDocuments({
-      'orderItems.eventId': { $in: eventIds },
+      'orderItems.productId': { $in: eventIds },
     });
 
     console.log('Total Orders Found:', totalOrders);
     const totalPaidOrders = await this.OrderModel.countDocuments({
-      'orderItems.eventId': { $in: eventIds },
+      'orderItems.productId': { $in: eventIds },
       isPaid: true,
     });
     const totalUnpPaidOrders = await this.OrderModel.countDocuments({
-      'orderItems.eventId': { $in: eventIds },
+      'orderItems.productId': { $in: eventIds },
       isPaid: false,
     });
     const customerAggregation = await this.OrderModel.aggregate([
@@ -560,7 +560,151 @@ export class AdminService {
     const earning = await this.OrderModel.aggregate([
       { $match: { isPaid: true, 'orderItems.productId': productId } },
       { $unwind: '$orderItems' },
-      { $match: { 'orderItems.eventId': productId } },
+      { $match: { 'orderItems.productId': productId } },
+      {
+        $group: {
+          _id: null,
+          eventEarnings: { $sum: '$orderItems.totalPrice' },
+        },
+      },
+    ]);
+
+    const totalEarning = earning.length > 0 ? earning[0].eventEarnings : 0;
+
+    return {
+      totalOrders,
+      totalPaidOrders,
+      totalUnpPaidOrders,
+      totalCustomers,
+      totalEarning,
+    };
+  }
+  async countAllProductPostedByLoginUserAnalysis(userId: string): Promise<{
+    eventCount: number;
+
+    totalEarning: number;
+    totalOrders: number;
+    totalPaidOrders: number;
+    totalUnpPaidOrders: number;
+    totalCustomers: number;
+  }> {
+    // Count the total number of events created by the organizer
+    const eventCount = await this.CreativeProductsModel.countDocuments({
+      postedBy: userId,
+    }).exec();
+
+    // Get all event IDs created by the organizer
+    const events = await this.CreativeProductsModel.find({
+      postedBy: userId,
+    }).exec();
+
+    if (!events) {
+      throw new NotFoundException('No Product found ');
+    }
+
+    // Extract event IDs as an array
+    const eventIds = events.map((event) => event._id.toString());
+
+    // Count total orders linked to any of these events
+    const totalOrders = await this.OrderModel.countDocuments({
+      'orderItems.productId': { $in: eventIds },
+    });
+
+    console.log('Total Orders Found:', totalOrders);
+    const totalPaidOrders = await this.OrderModel.countDocuments({
+      'orderItems.productId': { $in: eventIds },
+      isPaid: true,
+    });
+    const totalUnpPaidOrders = await this.OrderModel.countDocuments({
+      'orderItems.productId': { $in: eventIds },
+      isPaid: false,
+    });
+    const uniqueUsers = await this.OrderModel.aggregate([
+      {
+        $group: {
+          _id: '$userId',
+        },
+      },
+      {
+        $count: 'totalUsers',
+      },
+    ]);
+
+    // Retrieve earnings safely
+    const earning = await this.OrderModel.aggregate([
+      { $match: { 'orderItems.productId': { $in: eventIds }, isPaid: true } },
+
+      { $group: { _id: null, totalEarnings: { $sum: '$grandTotal' } } },
+    ]);
+
+    const totalEarning = earning.length > 0 ? earning[0].totalEarnings : 0;
+    const totalCustomers =
+      uniqueUsers.length > 0 ? uniqueUsers[0].totalUsers : 0;
+    return {
+      eventCount,
+      totalOrders,
+      totalPaidOrders,
+      totalUnpPaidOrders,
+      totalCustomers,
+      totalEarning,
+    };
+  }
+  async countProductIdPostedbyLoginUserAnalysis(
+    userId: string,
+    productId: string,
+  ): Promise<{
+    totalEarning: number;
+    totalOrders: number;
+    totalPaidOrders: number;
+    totalUnpPaidOrders: number;
+    totalCustomers: number;
+  }> {
+    // Count the total number of events created by the organizer
+
+    // Get all event IDs created by the organizer
+    const product = await this.CreativeProductsModel.findOne({
+      _id: productId,
+      postedBy: userId,
+    }).exec();
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    // Extract event IDs as an array
+    const eventIds = [product._id.toString()];
+
+    // Count total orders linked to any of these events
+    const totalOrders = await this.OrderModel.countDocuments({
+      'orderItems.productId': { $in: eventIds },
+    });
+
+    console.log('Total Orders Found:', totalOrders);
+    const totalPaidOrders = await this.OrderModel.countDocuments({
+      'orderItems.productId': { $in: eventIds },
+      isPaid: true,
+    });
+    const totalUnpPaidOrders = await this.OrderModel.countDocuments({
+      'orderItems.productId': { $in: eventIds },
+      isPaid: false,
+    });
+    const customerAggregation = await this.OrderModel.aggregate([
+      { $unwind: '$orderItems' },
+      { $match: { 'orderItems.productId': productId } },
+      { $group: { _id: '$userId' } },
+      { $count: 'totalCustomers' },
+    ]);
+
+    const totalCustomers =
+      customerAggregation.length > 0
+        ? customerAggregation[0].totalCustomers
+        : 0;
+
+    // Retrieve earnings safely
+    const earning = await this.OrderModel.aggregate([
+      { $match: { isPaid: true, 'orderItems.productId': productId } },
+      { $unwind: '$orderItems' },
+      { $match: { 'orderItems.productId': productId } },
       {
         $group: {
           _id: null,
