@@ -13,6 +13,7 @@ import { Query } from 'express-serve-static-core';
 import { AdminUser } from 'src/admin/entities/admin.entity';
 const ImageKit = require('imagekit');
 import slugify from 'slugify';
+import { AddCommentDto } from './dto/AddComment.dto';
 @Injectable()
 export class CretiveProductsService {
   private imagekit: ImageKit;
@@ -259,5 +260,21 @@ export class CretiveProductsService {
       throw new NotFoundException('Product not found');
     }
     return product;
+  }
+
+  async addComment(id: string, addCommentDto: AddCommentDto, userId: string) {
+    const addComment = await this.CreativeProductsModel.findById(id);
+    if (!addComment) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const newComment: any = {
+      userId: userId,
+      commentText: addCommentDto.commentText,
+      createdAt: new Date(),
+    };
+
+    addComment.comments.push(newComment);
+    return await addComment.save();
   }
 }

@@ -19,6 +19,7 @@ import { UserAuthGuard } from 'src/auth/guards/auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreativeProducts } from './entities/cretive-product.entity';
 import { Query as ExpressQuery } from 'express-serve-static-core';
+import { AddCommentDto } from './dto/AddComment.dto';
 @Controller('cretive-products')
 export class CretiveProductsController {
   constructor(
@@ -85,5 +86,15 @@ export class CretiveProductsController {
   @Get('product/:slug')
   async getEventBySlug(@Param('slug') slug: string): Promise<CreativeProducts> {
     return this.cretiveProductsService.findBySlug(slug);
+  }
+  @UseGuards(UserAuthGuard)
+  @Patch(':id/comment')
+  async addComment(
+    @Param('id') id: string,
+    @Body() addCommentDto: AddCommentDto,
+    @Req() req,
+  ) {
+    const userId = req.userId;
+    return this.cretiveProductsService.addComment(id, addCommentDto, userId);
   }
 }

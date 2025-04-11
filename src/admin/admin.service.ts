@@ -579,7 +579,7 @@ export class AdminService {
       totalEarning,
     };
   }
-  async countAllProductPostedByUserAnalysis(): Promise<{
+  async countAllProductPostedByLoginUserAnalysis(userId: string): Promise<{
     eventCount: number;
 
     totalEarning: number;
@@ -589,10 +589,14 @@ export class AdminService {
     totalCustomers: number;
   }> {
     // Count the total number of events created by the organizer
-    const eventCount = await this.CreativeProductsModel.countDocuments().exec();
+    const eventCount = await this.CreativeProductsModel.countDocuments({
+      postedBy: userId,
+    }).exec();
 
     // Get all event IDs created by the organizer
-    const events = await this.CreativeProductsModel.find().exec();
+    const events = await this.CreativeProductsModel.find({
+      postedBy: userId,
+    }).exec();
 
     if (!events) {
       throw new NotFoundException('No Product found ');
@@ -625,10 +629,6 @@ export class AdminService {
         $count: 'totalUsers',
       },
     ]);
-    // const totalCustomers = await this.OrderModel.countDocuments({
-    //   'orderItems.eventId': { $in: eventIds },
-    //   userId,
-    // });
 
     // Retrieve earnings safely
     const earning = await this.OrderModel.aggregate([
@@ -649,7 +649,7 @@ export class AdminService {
       totalEarning,
     };
   }
-  async countProductIdPostedbyUserAnalysis(
+  async countProductIdPostedbyLoginUserAnalysis(
     userId: string,
     productId: string,
   ): Promise<{
@@ -676,16 +676,16 @@ export class AdminService {
 
     // Count total orders linked to any of these events
     const totalOrders = await this.OrderModel.countDocuments({
-      'orderItems.eventId': { $in: eventIds },
+      'orderItems.productId': { $in: eventIds },
     });
 
     console.log('Total Orders Found:', totalOrders);
     const totalPaidOrders = await this.OrderModel.countDocuments({
-      'orderItems.eventId': { $in: eventIds },
+      'orderItems.productId': { $in: eventIds },
       isPaid: true,
     });
     const totalUnpPaidOrders = await this.OrderModel.countDocuments({
-      'orderItems.eventId': { $in: eventIds },
+      'orderItems.productId': { $in: eventIds },
       isPaid: false,
     });
     const customerAggregation = await this.OrderModel.aggregate([
@@ -704,7 +704,7 @@ export class AdminService {
     const earning = await this.OrderModel.aggregate([
       { $match: { isPaid: true, 'orderItems.productId': productId } },
       { $unwind: '$orderItems' },
-      { $match: { 'orderItems.eventId': productId } },
+      { $match: { 'orderItems.productId': productId } },
       {
         $group: {
           _id: null,

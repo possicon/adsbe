@@ -4,6 +4,17 @@ import { Document, Model, Types } from 'mongoose';
 import slugify from 'slugify';
 
 @Schema({ timestamps: true })
+export class Comment {
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  userId: Types.ObjectId;
+
+  @Prop({ required: true })
+  commentText: string;
+
+  @Prop({ type: Date, default: Date.now })
+  createdAt: Date;
+}
+@Schema({ timestamps: true })
 export class CreativeProducts extends Document {
   @Prop({ required: true })
   title: string;
@@ -42,7 +53,8 @@ export class CreativeProducts extends Document {
 
   @Prop({ unique: true, required: false })
   slug: string;
-
+  @Prop([{ type: Comment }])
+  comments: Comment[];
   @Prop({
     required: false,
     enum: ['pending', 'approved', 'rejected'],
