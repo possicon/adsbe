@@ -18,6 +18,7 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { UserAuthGuard } from 'src/auth/guards/auth.guard';
 import { Order } from './entities/order.entity';
 import { Query as ExpressQuery } from 'express-serve-static-core';
+import { AddCommentDto } from './dto/AddOrderComment.dto';
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
@@ -88,5 +89,16 @@ export class OrderController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.orderService.remove(+id);
+  }
+
+  @UseGuards(UserAuthGuard)
+  @Patch(':id/comment')
+  async addComment(
+    @Param('id') id: string,
+    @Body() addCommentDto: AddCommentDto,
+    @Req() req,
+  ) {
+    const userId = req.userId;
+    return this.orderService.addComment(id, addCommentDto, userId);
   }
 }
