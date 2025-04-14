@@ -437,7 +437,7 @@ export class AdminService {
     return data;
   }
   async countAllProductAnalysis(): Promise<{
-    eventCount: number;
+    productCount: number;
 
     totalEarning: number;
     totalOrders: number;
@@ -446,7 +446,8 @@ export class AdminService {
     totalCustomers: number;
   }> {
     // Count the total number of events created by the organizer
-    const eventCount = await this.CreativeProductsModel.countDocuments().exec();
+    const productCount =
+      await this.CreativeProductsModel.countDocuments().exec();
 
     // Get all event IDs created by the organizer
     const events = await this.CreativeProductsModel.find().exec();
@@ -498,7 +499,7 @@ export class AdminService {
     const totalCustomers =
       uniqueUsers.length > 0 ? uniqueUsers[0].totalUsers : 0;
     return {
-      eventCount,
+      productCount,
       totalOrders,
       totalPaidOrders,
       totalUnpPaidOrders,
@@ -580,7 +581,7 @@ export class AdminService {
     };
   }
   async countAllProductPostedByLoginUserAnalysis(userId: string): Promise<{
-    eventCount: number;
+    productCount: number;
 
     totalEarning: number;
     totalOrders: number;
@@ -589,7 +590,7 @@ export class AdminService {
     totalCustomers: number;
   }> {
     // Count the total number of events created by the organizer
-    const eventCount = await this.CreativeProductsModel.countDocuments({
+    const productCount = await this.CreativeProductsModel.countDocuments({
       postedBy: userId,
     }).exec();
 
@@ -641,7 +642,7 @@ export class AdminService {
     const totalCustomers =
       uniqueUsers.length > 0 ? uniqueUsers[0].totalUsers : 0;
     return {
-      eventCount,
+      productCount,
       totalOrders,
       totalPaidOrders,
       totalUnpPaidOrders,

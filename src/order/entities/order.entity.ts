@@ -24,7 +24,7 @@ export class Comment {
   commentText: string;
 
   @Prop({ required: false })
-  img: string;
+  fileUrl: string;
 
   @Prop({ type: Date, default: Date.now })
   createdAt: Date;
@@ -119,6 +119,9 @@ export class Order extends Document {
 
   @Prop({ type: Number, default: 0.0 })
   grandTotal: number;
+
+  @Prop({ required: false })
+  projectDsc: string;
 
   @Prop([{ type: Comment }])
   comments: Comment[];

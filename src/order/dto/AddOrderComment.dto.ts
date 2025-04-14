@@ -6,5 +6,5 @@ export class AddCommentDto {
   commentText: string;
 
   @IsOptional()
-  img: string;
+  fileUrl: string;
 }

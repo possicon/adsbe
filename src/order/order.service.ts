@@ -19,6 +19,7 @@ import { Query } from 'express-serve-static-core';
 import { AddCommentDto } from './dto/AddOrderComment.dto';
 import { AdminUser } from 'src/admin/entities/admin.entity';
 const ImageKit = require('imagekit');
+import * as fs from 'fs';
 @Injectable()
 export class OrderService {
   private readonly logger = new Logger(PaystackService.name);
@@ -45,7 +46,8 @@ export class OrderService {
     if (!this.paystackService) {
       throw new Error('PaystackService is not initialized'); // Debugging line
     }
-    const { orderItems, billingInfo, redirect_url } = createOrderDTO;
+    const { orderItems, billingInfo, redirect_url, projectDsc } =
+      createOrderDTO;
 
     const user = await this.UserModel.findById(userId);
     if (!user)
@@ -83,6 +85,7 @@ export class OrderService {
       billingInfo,
       grandTotal,
       redirect_url,
+      projectDsc,
       payStackPayment: {
         userId,
         email: user.email,
@@ -108,6 +111,7 @@ export class OrderService {
       orderItems,
       billingInfo,
       redirect_url,
+      projectDsc,
       userId,
       email: user.email,
       amount: grandTotal,
@@ -311,17 +315,17 @@ export class OrderService {
     }
     let PicsUrl: string | undefined;
 
-    if (addCommentDto.img) {
+    if (addCommentDto.fileUrl) {
       try {
         const img = await this.imagekit.upload({
-          file: addCommentDto.img,
+          file: addCommentDto.fileUrl,
           // fileName: `${addCommentDto.commentText}/order/.jpg`,
           fileName: 'orderComment.jpg',
           folder: '/Order',
         });
 
         PicsUrl = img.url;
-        addCommentDto.img = PicsUrl;
+        addCommentDto.fileUrl = PicsUrl;
       } catch (error) {
         console.error('Error uploading to ImageKit:', error);
         throw new BadRequestException('Error uploading order picture');
@@ -330,7 +334,7 @@ export class OrderService {
     const newComment: any = {
       userId: userId,
       commentText: addCommentDto.commentText,
-      img: addCommentDto.img,
+      fileUrl: addCommentDto.fileUrl,
       createdAt: new Date(),
     };
 
@@ -344,5 +348,56 @@ export class OrderService {
 
   remove(id: number) {
     return `This action removes a #${id} order`;
+  }
+
+  async addCommentFormData(
+    id: string,
+    addCommentDto: AddCommentDto,
+    userId: string,
+    file?: Express.Multer.File,
+  ) {
+    const addComment = await this.OrderModel.findById(id);
+    if (!addComment) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const customer = await this.OrderModel.findOne({ userId });
+    const adminUser = await this.AdminUserModel.findOne({ userId });
+    if (!customer && !adminUser) {
+      throw new NotFoundException(
+        'Only Admin & Customer for the order is permitted to add a comment',
+      );
+    }
+
+    let imgUrl: string | undefined;
+
+    if (file) {
+      try {
+        const base64Image = file.buffer.toString('base64');
+        const mimeType = file.mimetype;
+        const dataUri = `data:${mimeType};base64,${base64Image}`;
+
+        const upload = await this.imagekit.upload({
+          file: dataUri,
+          fileName: 'orderComment.jpg',
+          folder: '/Order',
+        });
+
+        imgUrl = upload.url;
+      } catch (error) {
+        console.error('ImageKit Upload Error:', error);
+        throw new BadRequestException('Error uploading order picture');
+      }
+    }
+
+    const newComment: any = {
+      userId: userId,
+      commentText: addCommentDto.commentText,
+      fileUrl: imgUrl,
+      createdAt: new Date(),
+    };
+
+    addComment.comments.push(newComment);
+    return await addComment.save();
   }
 }

@@ -11,6 +11,8 @@ import {
   UsePipes,
   ValidationPipe,
   Query,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -19,6 +21,7 @@ import { UserAuthGuard } from 'src/auth/guards/auth.guard';
 import { Order } from './entities/order.entity';
 import { Query as ExpressQuery } from 'express-serve-static-core';
 import { AddCommentDto } from './dto/AddOrderComment.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
@@ -92,7 +95,7 @@ export class OrderController {
   }
 
   @UseGuards(UserAuthGuard)
-  @Patch(':id/comment')
+  @Patch(':id/comment/new')
   async addComment(
     @Param('id') id: string,
     @Body() addCommentDto: AddCommentDto,
@@ -100,5 +103,22 @@ export class OrderController {
   ) {
     const userId = req.userId;
     return this.orderService.addComment(id, addCommentDto, userId);
+  }
+  @UseGuards(UserAuthGuard)
+  @Patch(':id/comment')
+  @UseInterceptors(FileInterceptor('img'))
+  async addCommentFormData(
+    @Param('id') id: string,
+    @Body() addCommentDto: AddCommentDto,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req,
+  ) {
+    const userId = req.userId;
+    return this.orderService.addCommentFormData(
+      id,
+      addCommentDto,
+      userId,
+      file,
+    );
   }
 }
