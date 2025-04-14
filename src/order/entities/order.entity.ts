@@ -23,7 +23,7 @@ export class Comment {
   @Prop({ required: true })
   commentText: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   img: string;
 
   @Prop({ type: Date, default: Date.now })
