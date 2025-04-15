@@ -370,16 +370,20 @@ export class OrderService {
     }
 
     let imgUrl: string | undefined;
-
     if (file) {
       try {
         const base64Image = file.buffer.toString('base64');
         const mimeType = file.mimetype;
+
+        // Extract extension from original file name
+        const ext = file.originalname.split('.').pop(); // e.g., 'jpg', 'png'
+        const fileName = `orderComment_${Date.now()}.${ext}`; // Optional: Add timestamp to avoid name conflicts
+
         const dataUri = `data:${mimeType};base64,${base64Image}`;
 
         const upload = await this.imagekit.upload({
           file: dataUri,
-          fileName: 'orderComment.jpg',
+          fileName: fileName,
           folder: '/Order',
         });
 

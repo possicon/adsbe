@@ -1,7 +1,7 @@
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class AddCommentDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsString() // Validate that it's a string
   commentText: string;
 

@@ -301,28 +301,4 @@ export class AdminController {
       productId,
     );
   }
-
-  // @UseGuards(UserAuthGuard)
-  // @Get('creative-products/user/analysis/:productId')
-  // async countProductIdPostedbyLoginUserAnalysis(
-  //   @Param('productId') productId: string,
-  //   @Req() req,
-  // ): Promise<{
-  //   totalEarning: number;
-  //   totalOrders: number;
-  //   totalPaidOrders: number;
-  //   totalUnpPaidOrders: number;
-  //   totalCustomers: number;
-  // }> {
-  //   const user = req.userId;
-  //   const userId = user;
-  //   const adminAuthority = await this.adminService.getAdminByUserId(user);
-  //   if (adminAuthority.userId.toString() !== user) {
-  //     throw new ForbiddenException('Only admins can perform this action');
-  //   }
-  //   return this.adminService.countProductIdPostedbyLoginUserAnalysis(
-  //     productId,
-  //     userId,
-  //   );
-  // }
 }
