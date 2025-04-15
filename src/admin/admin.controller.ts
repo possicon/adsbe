@@ -222,7 +222,7 @@ export class AdminController {
   @UseGuards(UserAuthGuard)
   @Get('creative-products/analysis/counts')
   async countAllProductAnalysis(@Req() req): Promise<{
-    eventCount: number;
+    productCount: number;
 
     totalEarning: number;
     totalOrders: number;
@@ -261,7 +261,7 @@ export class AdminController {
   @UseGuards(UserAuthGuard)
   @Get('creative-products/user/analysis')
   async countAllProductPostedByLoginUserAnalysis(@Req() req): Promise<{
-    eventCount: number;
+    productCount: number;
 
     totalEarning: number;
     totalOrders: number;

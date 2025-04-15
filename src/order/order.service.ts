@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -11,24 +16,38 @@ import { PaystackService } from './paystack.service';
 import { PaymentStatus } from './dto/paystack-payment.dto';
 import axios, { AxiosResponse } from 'axios';
 import { Query } from 'express-serve-static-core';
+import { AddCommentDto } from './dto/AddOrderComment.dto';
+import { AdminUser } from 'src/admin/entities/admin.entity';
+const ImageKit = require('imagekit');
+import * as fs from 'fs';
 @Injectable()
 export class OrderService {
   private readonly logger = new Logger(PaystackService.name);
   private PAYSTACK_VERIFY_URL = 'https://api.paystack.co/transaction/verify';
+  private imagekit: ImageKit;
   constructor(
     @InjectModel(Order.name) private OrderModel: Model<Order>,
+    @InjectModel(AdminUser.name)
+    private readonly AdminUserModel: Model<AdminUser>,
     @InjectModel(CreativeProducts.name)
     private readonly CreativeProductModel: Model<CreativeProducts>,
     @InjectModel(User.name) private UserModel: Model<User>,
     private readonly configService: ConfigService,
     private readonly paystackService: PaystackService,
-  ) {}
+  ) {
+    this.imagekit = new ImageKit({
+      publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+      privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+      urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
+    });
+  }
 
   async createOrder(createOrderDTO: CreateOrderDto, userId: string) {
     if (!this.paystackService) {
       throw new Error('PaystackService is not initialized'); // Debugging line
     }
-    const { orderItems, billingInfo, redirect_url } = createOrderDTO;
+    const { orderItems, billingInfo, redirect_url, projectDsc } =
+      createOrderDTO;
 
     const user = await this.UserModel.findById(userId);
     if (!user)
@@ -66,6 +85,7 @@ export class OrderService {
       billingInfo,
       grandTotal,
       redirect_url,
+      projectDsc,
       payStackPayment: {
         userId,
         email: user.email,
@@ -91,6 +111,7 @@ export class OrderService {
       orderItems,
       billingInfo,
       redirect_url,
+      projectDsc,
       userId,
       email: user.email,
       amount: grandTotal,
@@ -279,11 +300,104 @@ export class OrderService {
     return { order };
   }
 
+  async addComment(id: string, addCommentDto: AddCommentDto, userId: string) {
+    const addComment = await this.OrderModel.findById(id);
+    if (!addComment) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const customer = await this.OrderModel.findOne({ userId });
+    const adminUser = await this.AdminUserModel.findOne({ userId });
+    if (!customer && !adminUser) {
+      throw new NotFoundException(
+        'Only Admin & Customer for the order is permitted to add a comment',
+      );
+    }
+    let PicsUrl: string | undefined;
+
+    if (addCommentDto.fileUrl) {
+      try {
+        const img = await this.imagekit.upload({
+          file: addCommentDto.fileUrl,
+          // fileName: `${addCommentDto.commentText}/order/.jpg`,
+          fileName: 'orderComment.jpg',
+          folder: '/Order',
+        });
+
+        PicsUrl = img.url;
+        addCommentDto.fileUrl = PicsUrl;
+      } catch (error) {
+        console.error('Error uploading to ImageKit:', error);
+        throw new BadRequestException('Error uploading order picture');
+      }
+    }
+    const newComment: any = {
+      userId: userId,
+      commentText: addCommentDto.commentText,
+      fileUrl: addCommentDto.fileUrl,
+      createdAt: new Date(),
+    };
+
+    addComment.comments.push(newComment);
+    return await addComment.save();
+  }
+
   update(id: string, updateOrderDto: UpdateOrderDto) {
     return `This action updates a #${id} order`;
   }
 
   remove(id: number) {
     return `This action removes a #${id} order`;
+  }
+
+  async addCommentFormData(
+    id: string,
+    addCommentDto: AddCommentDto,
+    userId: string,
+    file?: Express.Multer.File,
+  ) {
+    const addComment = await this.OrderModel.findById(id);
+    if (!addComment) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const customer = await this.OrderModel.findOne({ userId });
+    const adminUser = await this.AdminUserModel.findOne({ userId });
+    if (!customer && !adminUser) {
+      throw new NotFoundException(
+        'Only Admin & Customer for the order is permitted to add a comment',
+      );
+    }
+
+    let imgUrl: string | undefined;
+
+    if (file) {
+      try {
+        const base64Image = file.buffer.toString('base64');
+        const mimeType = file.mimetype;
+        const dataUri = `data:${mimeType};base64,${base64Image}`;
+
+        const upload = await this.imagekit.upload({
+          file: dataUri,
+          fileName: 'orderComment.jpg',
+          folder: '/Order',
+        });
+
+        imgUrl = upload.url;
+      } catch (error) {
+        console.error('ImageKit Upload Error:', error);
+        throw new BadRequestException('Error uploading order picture');
+      }
+    }
+
+    const newComment: any = {
+      userId: userId,
+      commentText: addCommentDto.commentText,
+      fileUrl: imgUrl,
+      createdAt: new Date(),
+    };
+
+    addComment.comments.push(newComment);
+    return await addComment.save();
   }
 }

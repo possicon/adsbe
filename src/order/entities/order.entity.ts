@@ -15,6 +15,21 @@ export class OrderItems {
   totalPrice: number;
 }
 
+@Schema({ timestamps: true })
+export class Comment {
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  userId: Types.ObjectId;
+
+  @Prop({ required: true })
+  commentText: string;
+
+  @Prop({ required: false })
+  fileUrl: string;
+
+  @Prop({ type: Date, default: Date.now })
+  createdAt: Date;
+}
+
 //// Billing Info
 @Schema({ timestamps: true })
 export class BillingInfo {
@@ -104,6 +119,12 @@ export class Order extends Document {
 
   @Prop({ type: Number, default: 0.0 })
   grandTotal: number;
+
+  @Prop({ required: false })
+  projectDsc: string;
+
+  @Prop([{ type: Comment }])
+  comments: Comment[];
 
   @Prop({ required: false })
   amountPaid: string;

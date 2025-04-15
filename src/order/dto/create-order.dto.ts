@@ -5,6 +5,7 @@ import {
   IsObject,
   IsString,
   IsNumber,
+  IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -47,6 +48,9 @@ export class CreateOrderDto {
   @IsNotEmpty()
   @IsString()
   redirect_url: string;
+
+  @IsOptional()
+  projectDsc: string;
 
   @IsArray()
   //   @ValidateNested({ each: true })

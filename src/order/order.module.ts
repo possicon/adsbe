@@ -10,6 +10,7 @@ import {
   CreativeProductsSchema,
 } from 'src/cretive-products/entities/cretive-product.entity';
 import { PaystackService } from './paystack.service';
+import { AdminUser, AdminUserSchema } from 'src/admin/entities/admin.entity';
 
 @Module({
   imports: [
@@ -21,6 +22,10 @@ import { PaystackService } from './paystack.service';
       {
         name: CreativeProducts.name,
         schema: CreativeProductsSchema,
+      },
+      {
+        name: AdminUser.name,
+        schema: AdminUserSchema,
       },
       {
         name: User.name,
