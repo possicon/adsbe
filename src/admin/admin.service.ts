@@ -650,6 +650,7 @@ export class AdminService {
       totalEarning,
     };
   }
+
   async countProductIdPostedbyLoginUserAnalysis(
     userId: string,
     productId: string,
@@ -669,7 +670,9 @@ export class AdminService {
     }).exec();
 
     if (!product) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException(
+        'Product not found for this login Admin user',
+      );
     }
 
     // Extract event IDs as an array
