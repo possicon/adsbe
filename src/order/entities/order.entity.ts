@@ -20,7 +20,7 @@ export class Comment {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   commentText: string;
 
   @Prop({ required: false })

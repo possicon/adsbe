@@ -63,7 +63,7 @@ export class MailService {
 
             <!-- Footer -->
             <div style="text-align: center; font-size: 14px; color: #999;">
-                <p style="margin: 0 0 10px;">Thank you for joining Trainingbe App!</p>
+                <p style="margin: 0 0 10px;">Thank you for joining Adsbe App!</p>
                 <p style="margin: 0 0 10px;">Share & Grow your knowledge with us.</p>
                 <p>&copy; ${new Date().getFullYear()} Adsbe App. All rights reserved.</p>
             </div>

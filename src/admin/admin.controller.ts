@@ -277,7 +277,6 @@ export class AdminController {
     }
     return this.adminService.countAllProductPostedByLoginUserAnalysis(userId);
   }
-
   @UseGuards(UserAuthGuard)
   @Get('creative-products/user/analysis/:productId')
   async countProductIdPostedbyLoginUserAnalysis(
@@ -290,12 +289,13 @@ export class AdminController {
     totalUnpPaidOrders: number;
     totalCustomers: number;
   }> {
-    const user = req.userId;
-    const userId = user;
-    const adminAuthority = await this.adminService.getAdminByUserId(user);
-    if (adminAuthority.userId.toString() !== user) {
+    const userId = req.userId;
+    const adminAuthority = await this.adminService.getAdminByUserId(userId);
+
+    if (!adminAuthority || adminAuthority.userId.toString() !== userId) {
       throw new ForbiddenException('Only admins can perform this action');
     }
+
     return this.adminService.countProductIdPostedbyLoginUserAnalysis(
       userId,
       productId,
