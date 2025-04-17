@@ -45,7 +45,7 @@ export class CreativeCategoryController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     await this.creativeCategoryService.remove(id);
-    return { message: 'Event Category Deleted successfully' };
+    return { message: 'Category Deleted successfully' };
   }
 
   @Patch(':id')
