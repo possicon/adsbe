@@ -58,7 +58,14 @@ export class CreativeCategoryService {
     }
     return category;
   }
-
+  async Delete(id: string): Promise<{ message: string }> {
+    const category =
+      await this.CreativeCategoryModel.findByIdAndDelete(id).exec();
+    if (!category) {
+      throw new NotFoundException('Creative Category not found');
+    }
+    return { message: 'New Password changed successfully' };
+  }
   async update(
     id: string,
     updateCreativeCategoryDto: Partial<UpdateCreativeCategoryDto>,
