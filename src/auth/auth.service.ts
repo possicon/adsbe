@@ -224,6 +224,7 @@ export class AuthService {
   async updateProfile(
     id: string,
     updateUserDto: UpdateProfileDto,
+    file?: Express.Multer.File,
   ): Promise<User> {
     const existingUser = await this.UserModel.findById(id).exec();
     if (!existingUser) {
@@ -231,11 +232,19 @@ export class AuthService {
     }
     let profilePicsUrl: string | undefined;
 
-    if (updateUserDto.profilePics) {
+    if (file) {
       try {
+        const base64Image = file.buffer.toString('base64');
+        const mimeType = file.mimetype;
+
+        // Extract extension from original file name
+        const ext = file.originalname.split('.').pop(); // e.g., 'jpg', 'png'
+
+        const dataUri = `data:${mimeType};base64,${base64Image}`;
+
         const img = await this.imagekit.upload({
-          file: updateUserDto.profilePics,
-          fileName: `${updateUserDto.firstName}.jpg`,
+          file: dataUri,
+          fileName: `${updateUserDto.firstName}.${ext}`,
           folder: '/profilePics',
         });
 

@@ -21,8 +21,13 @@ import * as bcrypt from 'bcrypt';
 import { User } from 'src/auth/entities/auth.entity';
 import { CreativeProducts } from 'src/cretive-products/entities/cretive-product.entity';
 import { Order } from 'src/order/entities/order.entity';
+import { DeliveryCommentDto } from './dto/DeliveryComment.dto';
+import { UpdateDeliveryStatusDto } from './dto/UpdateDeliveryStatus.dto';
+
+const ImageKit = require('imagekit');
 @Injectable()
 export class AdminService {
+  private imagekit: ImageKit;
   constructor(
     @InjectModel(AdminUser.name)
     private readonly AdminUserModel: Model<AdminUser>,
@@ -33,7 +38,13 @@ export class AdminService {
     @InjectModel(RefreshToken.name)
     private RefreshTokenModel: Model<RefreshToken>,
     private jwtService: JwtService,
-  ) {}
+  ) {
+    this.imagekit = new ImageKit({
+      publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+      privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+      urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
+    });
+  }
   async makeFirstAdminUser(
     // userId: Types.ObjectId
     userId: string,
@@ -726,5 +737,118 @@ export class AdminService {
       totalCustomers,
       totalEarning,
     };
+  }
+  async updateDeliveryStatus(
+    id: string,
+    dto: UpdateDeliveryStatusDto,
+    userId: string,
+  ): Promise<Order> {
+    const order = await this.OrderModel.findById(id);
+    if (!order) throw new NotFoundException('Order not found');
+    const adminUser = await this.AdminUserModel.findOne({ userId });
+    if (!adminUser) {
+      throw new NotFoundException('Only Admin is permitted to add a comment');
+    }
+    const newStatus: any = {
+      userId: userId,
+      deliveryStatus: dto.deliveryStatus,
+      createdAt: new Date(),
+    };
+
+    order.deliveryStatus = newStatus as any;
+    return order.save();
+  }
+  async addDeliveryCommentFormData(
+    id: string,
+    addCommentDto: DeliveryCommentDto,
+    userId: string,
+    file?: Express.Multer.File,
+  ) {
+    const addComment = await this.OrderModel.findById(id);
+    if (!addComment) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const adminUser = await this.AdminUserModel.findOne({ userId });
+    if (!adminUser) {
+      throw new NotFoundException('Only Admin  is permitted to add a comment');
+    }
+
+    let imgUrl: string | undefined;
+    if (file) {
+      try {
+        const base64Image = file.buffer.toString('base64');
+        const mimeType = file.mimetype;
+
+        // Extract extension from original file name
+        const ext = file.originalname.split('.').pop(); // e.g., 'jpg', 'png'
+        const fileName = `orderComment_${Date.now()}.${ext}`; // Optional: Add timestamp to avoid name conflicts
+
+        const dataUri = `data:${mimeType};base64,${base64Image}`;
+
+        const upload = await this.imagekit.upload({
+          file: dataUri,
+          fileName: fileName,
+          folder: '/Order',
+        });
+
+        imgUrl = upload.url;
+      } catch (error) {
+        console.error('ImageKit Upload Error:', error);
+        throw new BadRequestException('Error uploading order picture');
+      }
+    }
+
+    const newComment: any = {
+      userId: userId,
+      commentText: addCommentDto.commentText,
+      fileUrl: imgUrl,
+      createdAt: new Date(),
+    };
+
+    addComment.deliveryComment.push(newComment);
+    return await addComment.save();
+  }
+  async addDeliveryComment(
+    id: string,
+    addCommentDto: DeliveryCommentDto,
+    userId: string,
+  ) {
+    const addComment = await this.OrderModel.findById(id);
+    if (!addComment) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const adminUser = await this.AdminUserModel.findOne({ userId });
+    if (!adminUser) {
+      throw new NotFoundException('Only Admin is permitted to add a comment');
+    }
+    let PicsUrl: string | undefined;
+
+    if (addCommentDto.fileUrl) {
+      try {
+        const img = await this.imagekit.upload({
+          file: addCommentDto.fileUrl,
+          // fileName: `${addCommentDto.commentText}/order/.jpg`,
+          fileName: 'orderComment.jpg',
+          folder: '/Order',
+        });
+
+        PicsUrl = img.url;
+        addCommentDto.fileUrl = PicsUrl;
+      } catch (error) {
+        console.error('Error uploading to ImageKit:', error);
+        throw new BadRequestException('Error uploading order picture');
+      }
+    }
+    const newComment: any = {
+      userId: userId,
+      commentText: addCommentDto.commentText,
+      fileUrl: addCommentDto.fileUrl,
+      createdAt: new Date(),
+    };
+
+    addComment.deliveryComment.push(newComment);
+    return await addComment.save();
   }
 }
