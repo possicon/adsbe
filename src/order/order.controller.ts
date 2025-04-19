@@ -106,7 +106,8 @@ export class OrderController {
   }
   @UseGuards(UserAuthGuard)
   @Patch(':id/comment')
-  @UseInterceptors(FileInterceptor('img'))
+  @UseInterceptors(FileInterceptor('fileUrl'))
+  // @UseInterceptors(FileInterceptor('img'))
   async addCommentFormData(
     @Param('id') id: string,
     @Body() addCommentDto: AddCommentDto,

@@ -33,6 +33,78 @@ export class CretiveProductsService {
   async create(
     createCretiveProductDto: CreateCretiveProductDto,
     userId: string,
+    files?: Express.Multer.File[],
+  ) {
+    const { title, description, category, price, fileType } =
+      createCretiveProductDto;
+
+    const adminUser: any = await this.AdminUserModel.findOne({ userId });
+    if (!adminUser || adminUser.isAdmin !== true) {
+      throw new BadRequestException(
+        'Only Admins are Authorized to create Product',
+      );
+    }
+
+    const nameExists = await this.CreativeProductsModel.findOne({
+      title,
+      category,
+      postedBy: userId,
+    });
+
+    if (nameExists) {
+      throw new BadRequestException('Creatives already been created');
+    }
+
+    const imageUrls: string[] = [];
+
+    if (files && files.length > 0) {
+      for (const file of files) {
+        try {
+          const base64Image = file.buffer.toString('base64');
+          const mimeType = file.mimetype;
+          const dataUri = `data:${mimeType};base64,${base64Image}`;
+          const ext = file.originalname.split('.').pop();
+          const fileUpload = await this.imagekit.upload({
+            file: dataUri,
+            fileName: `${title}-${Date.now()}.${ext}`,
+            folder: '/Products',
+          });
+          imageUrls.push(fileUpload.url);
+        } catch (error) {
+          console.error('ImageKit Upload Error:', error);
+          throw new BadRequestException('Error uploading creative file(s)');
+        }
+      }
+    }
+
+    const createData = new this.CreativeProductsModel({
+      title,
+      description,
+      category,
+      fileType,
+      price,
+      postedBy: userId,
+      fileUrl: imageUrls,
+    });
+
+    const result = await createData.save();
+    return {
+      id: result._id,
+      title: result.title,
+      description: result.description,
+      category: result.category,
+      fileType: result.fileType,
+      fileUrl: result.fileUrl,
+      price: result.price,
+      status: result.status,
+      postedBy: result.postedBy,
+      slug: result.slug,
+    };
+  }
+
+  async createNew(
+    createCretiveProductDto: CreateCretiveProductDto,
+    userId: string,
   ) {
     console.log(userId);
     const { title, description, category, price, fileType, fileUrl, postedBy } =
@@ -88,7 +160,6 @@ export class CretiveProductsService {
       slug: result.slug,
     };
   }
-
   async findAll(query: Query): Promise<any> {
     const resPerPage = 10;
     const currentPage = Number(query.page) || 1;
@@ -116,8 +187,87 @@ export class CretiveProductsService {
 
     return data;
   }
-
   async updateProduct(
+    id: string,
+    userId: string,
+    updateProductDto: UpdateCretiveProductDto,
+    files?: Express.Multer.File[],
+  ) {
+    const adminUser: any = await this.AdminUserModel.findOne({ userId });
+    if (!adminUser || adminUser.isAdmin !== true) {
+      throw new BadRequestException(
+        'Only Admins are Authorized to update Product',
+      );
+    }
+
+    const existingEvent = await this.CreativeProductsModel.findById(id).exec();
+    if (!existingEvent) {
+      throw new NotFoundException('Event not found');
+    }
+
+    let imageUrls: string[] = existingEvent.fileUrl || [];
+
+    if (files && files.length > 0) {
+      for (const file of files) {
+        try {
+          const base64Image = file.buffer.toString('base64');
+          const mimeType = file.mimetype;
+          const dataUri = `data:${mimeType};base64,${base64Image}`;
+          const ext = file.originalname.split('.').pop();
+          const fileUpload = await this.imagekit.upload({
+            file: dataUri,
+            fileName: `${updateProductDto.title}-${Date.now()}.${ext}`,
+            folder: '/productUpdate',
+          });
+          imageUrls.push(fileUpload.url);
+        } catch (error) {
+          console.error('ImageKit Upload Error:', error);
+          throw new BadRequestException('Error uploading creative file(s)');
+        }
+      }
+
+      updateProductDto.fileUrl = imageUrls;
+    }
+
+    if (
+      updateProductDto.title &&
+      updateProductDto.title !== existingEvent.title
+    ) {
+      const baseSlug = slugify(updateProductDto.title, {
+        lower: true,
+        strict: true,
+      });
+
+      let uniqueSlug = baseSlug;
+      let suffix = 1;
+
+      while (await this.CreativeProductsModel.findOne({ slug: uniqueSlug })) {
+        uniqueSlug = `${baseSlug}-${suffix++}`;
+      }
+
+      updateProductDto.slug = uniqueSlug;
+    }
+
+    const updateQuery: UpdateQuery<CreativeProducts> = {
+      ...existingEvent.toObject(),
+      ...updateProductDto,
+      fileUrl: imageUrls,
+    };
+
+    const updatedEvent = await this.CreativeProductsModel.findByIdAndUpdate(
+      id,
+      updateQuery,
+      { new: true },
+    ).exec();
+
+    if (!updatedEvent) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return updatedEvent;
+  }
+
+  async updateProductJson(
     id: string,
     userId: string,
     updateEventDto: UpdateCretiveProductDto,

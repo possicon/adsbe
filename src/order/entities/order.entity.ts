@@ -29,7 +29,36 @@ export class Comment {
   @Prop({ type: Date, default: Date.now })
   createdAt: Date;
 }
+@Schema({ timestamps: true })
+export class DeliveryStatus {
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  userId: Types.ObjectId;
 
+  @Prop({
+    required: false,
+    enum: ['ongoing', 'delivered', 'on-review'],
+    default: 'ongiong',
+  })
+  deliveryStatus: string;
+
+  @Prop({ type: Date, default: Date.now })
+  createdAt: Date;
+}
+
+@Schema({ timestamps: true })
+export class DeliveryComment {
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  userId: Types.ObjectId;
+
+  @Prop({ required: false })
+  commentText: string;
+
+  @Prop({ required: false })
+  fileUrl: string;
+
+  @Prop({ type: Date, default: Date.now })
+  createdAt: Date;
+}
 //// Billing Info
 @Schema({ timestamps: true })
 export class BillingInfo {
@@ -117,6 +146,9 @@ export class Order extends Document {
   @Prop({ required: false, default: false })
   isPaid: boolean;
 
+  @Prop([{ type: DeliveryStatus }])
+  deliveryStatus: DeliveryStatus;
+
   @Prop({ type: Number, default: 0.0 })
   grandTotal: number;
 
@@ -125,6 +157,9 @@ export class Order extends Document {
 
   @Prop([{ type: Comment }])
   comments: Comment[];
+
+  @Prop([{ type: DeliveryComment }])
+  deliveryComment: DeliveryComment[];
 
   @Prop({ required: false })
   amountPaid: string;

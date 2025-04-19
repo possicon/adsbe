@@ -12,6 +12,8 @@ import {
   ForbiddenException,
   Req,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
@@ -20,6 +22,9 @@ import { UserAuthGuard } from 'src/auth/guards/auth.guard';
 import { LoginDto } from 'src/auth/dto/login.dto';
 import { User } from 'src/auth/entities/auth.entity';
 import { Query as ExpressQuery } from 'express-serve-static-core';
+import { UpdateDeliveryStatusDto } from './dto/UpdateDeliveryStatus.dto';
+import { DeliveryCommentDto } from './dto/DeliveryComment.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
@@ -300,5 +305,34 @@ export class AdminController {
       userId,
       productId,
     );
+  }
+
+  @UseGuards(UserAuthGuard)
+  @Patch(':id/delivery-comment')
+  @UseInterceptors(FileInterceptor('fileUrl'))
+  // @UseInterceptors(FileInterceptor('img'))
+  async addCommentFormData(
+    @Param('id') id: string,
+    @Body() addCommentDto: DeliveryCommentDto,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req,
+  ) {
+    const userId = req.userId;
+    return this.adminService.addDeliveryCommentFormData(
+      id,
+      addCommentDto,
+      userId,
+      file,
+    );
+  }
+  @UseGuards(UserAuthGuard)
+  @Patch(':id/delivery-status')
+  async updateDeliveryStatus(
+    @Param('id') id: string,
+    @Req() req,
+    @Body() dto: UpdateDeliveryStatusDto,
+  ) {
+    const userId = req.userId;
+    return this.adminService.updateDeliveryStatus(id, dto, userId);
   }
 }

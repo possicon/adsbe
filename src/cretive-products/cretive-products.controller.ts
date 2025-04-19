@@ -11,31 +11,64 @@ import {
   UploadedFile,
   UseInterceptors,
   Query,
+  UploadedFiles,
 } from '@nestjs/common';
 import { CretiveProductsService } from './cretive-products.service';
 import { CreateCretiveProductDto } from './dto/create-cretive-product.dto';
 import { UpdateCretiveProductDto } from './dto/update-cretive-product.dto';
 import { UserAuthGuard } from 'src/auth/guards/auth.guard';
-import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+  FilesInterceptor,
+} from '@nestjs/platform-express';
 import { CreativeProducts } from './entities/cretive-product.entity';
 import { Query as ExpressQuery } from 'express-serve-static-core';
 import { AddCommentDto } from './dto/AddComment.dto';
+import { diskStorage, memoryStorage } from 'multer';
 @Controller('cretive-products')
 export class CretiveProductsController {
   constructor(
     private readonly cretiveProductsService: CretiveProductsService,
   ) {}
 
-  @UseGuards(UserAuthGuard)
   @Post()
+  @UseGuards(UserAuthGuard)
+  @UseInterceptors(
+    FilesInterceptor('fileUrl', 5, {
+      storage: memoryStorage(),
+      // storage: diskStorage({
+      //   destination: './FileUploads',
+      //   filename: (req, file, cb) => {
+      //     cb(null, `${Date.now()}-${file.originalname}`);
+      //   },
+      // }),
+      limits: { files: 5 },
+    }),
+  )
+  async createCreativeProduct(
+    @Body('createDto') createDto: string,
+    @Req() req,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    const userId = req.userId;
+    const parsedDto = JSON.parse(createDto); // convert string to object
+    return this.cretiveProductsService.create(parsedDto, userId, files);
+  }
+
+  @UseGuards(UserAuthGuard)
+  @Post('/new')
   // @UseInterceptors(FileInterceptor('fileUrl'))
-  create(
+  createNew(
     @Body() createCretiveProductDto: CreateCretiveProductDto,
     @Req() req,
     // @UploadedFile() fileUrl?: Express.Multer.File,
   ) {
     const userId: string = req.userId;
-    return this.cretiveProductsService.create(createCretiveProductDto, userId);
+    return this.cretiveProductsService.createNew(
+      createCretiveProductDto,
+      userId,
+    );
   }
   @Get('pag/all')
   async findAllPagination(
@@ -49,17 +82,43 @@ export class CretiveProductsController {
     return this.cretiveProductsService.findOne(id);
   }
   @UseGuards(UserAuthGuard)
-  @Patch(':id')
-  updateProduct(
+  @Patch(':id/update')
+  updateProductJson(
     @Param('id') id: string,
-    @Body() updateEventDto: UpdateCretiveProductDto,
+    @Body() updateProductDto: UpdateCretiveProductDto,
     @Req() req,
   ) {
     const userId: string = req.userId;
+    return this.cretiveProductsService.updateProductJson(
+      id,
+      userId,
+      updateProductDto,
+    );
+  }
+  @Patch(':id')
+  @UseGuards(UserAuthGuard)
+  @UseInterceptors(
+    FilesInterceptor('fileUrl', 5, {
+      storage: memoryStorage(),
+
+      limits: { files: 5 },
+    }),
+  )
+  async updateProduct(
+    @Param('id') id: string,
+    @Body('updateProductDto') updateProductDto: string,
+
+    @UploadedFiles()
+    files: { files?: Express.Multer.File[] },
+    @Req() req,
+  ) {
+    const userId: string = req.userId;
+    const parsedDto = JSON.parse(updateProductDto);
     return this.cretiveProductsService.updateProduct(
       id,
       userId,
-      updateEventDto,
+      parsedDto,
+      files?.files || [],
     );
   }
 

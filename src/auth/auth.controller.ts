@@ -59,18 +59,6 @@ export class AuthController {
 
     return this.authService.findUserProfile(id);
   }
-  @UseGuards(UserAuthGuard)
-  @Patch('profile/update')
-  @UseInterceptors(FileInterceptor('profilePics'))
-  updateProfile(
-    @Req() req,
-    // @Param('id') id: string,
-    @Body() updateUserDto: UpdateProfileDto,
-    @UploadedFile() profilePics?: Express.Multer.File,
-  ) {
-    const id = req.userId;
-    return this.authService.updateProfile(id, updateUserDto);
-  }
 
   @Post('forgot-password')
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
@@ -89,6 +77,20 @@ export class AuthController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
     return this.authService.update(+id, updateAuthDto);
+  }
+
+  @UseGuards(UserAuthGuard)
+  @Patch('profile/update')
+  @UseInterceptors(FileInterceptor('profilePics'))
+  async updateProfile(
+    @UploadedFile() file: Express.Multer.File,
+    // @Body() updateUserDto: UpdateProfileDto,
+    @Body('updateUserDto') updateUserDto: string,
+    @Req() req,
+  ) {
+    const id = req.userId;
+    const parsedDto = JSON.parse(updateUserDto);
+    return this.authService.updateProfile(id, parsedDto, file);
   }
 
   @Delete(':id')
