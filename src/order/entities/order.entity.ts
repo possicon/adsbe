@@ -146,7 +146,7 @@ export class Order extends Document {
   @Prop({ required: false, default: false })
   isPaid: boolean;
 
-  @Prop([{ type: DeliveryStatus }])
+  @Prop({ type: DeliveryStatus })
   deliveryStatus: DeliveryStatus;
 
   @Prop({ type: Number, default: 0.0 })
