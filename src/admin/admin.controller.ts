@@ -335,4 +335,13 @@ export class AdminController {
     const userId = req.userId;
     return this.adminService.updateDeliveryStatus(id, dto, userId);
   }
+
+  @UseGuards(UserAuthGuard)
+  @Patch('new/missing/delivery-statuss')
+  async fixMissingDeliveryStatus(@Req() req) {
+    const userId = req.userId;
+    return await this.adminService.updateOrdersWithMissingDeliveryStatus(
+      userId,
+    );
+  }
 }

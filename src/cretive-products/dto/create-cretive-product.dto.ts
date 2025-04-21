@@ -56,4 +56,9 @@ export class CreateCretiveProductDto {
     message: 'Status must be either Pending or Approved or Rejected',
   })
   status?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  productBenefits: string[];
 }

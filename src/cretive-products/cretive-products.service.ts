@@ -35,7 +35,7 @@ export class CretiveProductsService {
     userId: string,
     files?: Express.Multer.File[],
   ) {
-    const { title, description, category, price, fileType } =
+    const { title, description, category, price, productBenefits, fileType } =
       createCretiveProductDto;
 
     const adminUser: any = await this.AdminUserModel.findOne({ userId });
@@ -84,6 +84,7 @@ export class CretiveProductsService {
       fileType,
       price,
       postedBy: userId,
+      productBenefits,
       fileUrl: imageUrls,
     });
 
@@ -93,6 +94,7 @@ export class CretiveProductsService {
       title: result.title,
       description: result.description,
       category: result.category,
+      productBenefits: result.productBenefits,
       fileType: result.fileType,
       fileUrl: result.fileUrl,
       price: result.price,
@@ -107,8 +109,16 @@ export class CretiveProductsService {
     userId: string,
   ) {
     console.log(userId);
-    const { title, description, category, price, fileType, fileUrl, postedBy } =
-      createCretiveProductDto;
+    const {
+      title,
+      description,
+      category,
+      price,
+      productBenefits,
+      fileType,
+      fileUrl,
+      postedBy,
+    } = createCretiveProductDto;
     const adminUser: any = await this.AdminUserModel.findOne({ userId });
     if (!adminUser || adminUser.isAdmin !== true) {
       throw new BadRequestException(
@@ -139,6 +149,7 @@ export class CretiveProductsService {
       category,
       fileType,
       price,
+      productBenefits,
       postedBy: userId,
       fileUrl: imageUrls,
     });
@@ -152,7 +163,7 @@ export class CretiveProductsService {
       category: result.category,
       fileType: result.fileType,
       fileUrl: result.fileUrl,
-
+      productBenefits: result.productBenefits,
       price: result.price,
       status: result.status,
 
