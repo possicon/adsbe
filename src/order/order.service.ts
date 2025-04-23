@@ -20,6 +20,7 @@ import { AddCommentDto } from './dto/AddOrderComment.dto';
 import { AdminUser } from 'src/admin/entities/admin.entity';
 const ImageKit = require('imagekit');
 import * as fs from 'fs';
+import { MailService } from './Services/mail.service';
 @Injectable()
 export class OrderService {
   private readonly logger = new Logger(PaystackService.name);
@@ -34,6 +35,7 @@ export class OrderService {
     @InjectModel(User.name) private UserModel: Model<User>,
     private readonly configService: ConfigService,
     private readonly paystackService: PaystackService,
+    private mailService: MailService,
   ) {
     this.imagekit = new ImageKit({
       publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
@@ -101,6 +103,23 @@ export class OrderService {
     });
 
     await newOrder.save();
+    const email = user.email;
+    const firstName = user.firstName;
+    const lastName = user.lastName;
+    const amount = grandTotal;
+    const reference = paystackResponse.data.reference;
+
+    try {
+      await this.mailService.ConfirmOrder(
+        email,
+        firstName,
+        lastName,
+        amount,
+        reference,
+      );
+    } catch (error) {
+      throw new Error(`Failed to send email to ${email}`);
+    }
 
     return {
       message: 'Order created successfully, complete payment using Paystack',
@@ -145,7 +164,9 @@ export class OrderService {
           `Order with reference ${reference} not found.`,
         );
       }
-
+      const user = await this.UserModel.findById(order.userId);
+      if (!user)
+        throw new BadRequestException(`User with ID ${order.userId} not found`);
       // Update order status
       order.isPaid = true;
 
@@ -155,7 +176,24 @@ export class OrderService {
       order.grandTotal = data.amount / 100;
 
       await order.save();
-
+      const email = user.email;
+      const firstName = user.firstName;
+      const lastName = user.lastName;
+      const amount: any = order.grandTotal;
+      const referencePay = reference;
+      const trans_status = data.status;
+      try {
+        await this.mailService.VerifyOrder(
+          email,
+          firstName,
+          lastName,
+          amount,
+          referencePay,
+          trans_status,
+        );
+      } catch (error) {
+        throw new Error(`Failed to send email to ${email}`);
+      }
       return {
         message: 'Payment verified successfully',
         orderId: order._id,

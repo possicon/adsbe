@@ -19,7 +19,7 @@ export class MailService {
   }
 
   async sendPasswordResetEmail(to: string, token: string) {
-    const resetLink = `https://adsfe.ogini.com/reset-password?token=${token}`;
+    const resetLink = `${process.env.Domain_Url}/reset-password?token=${token}`;
     const mailOptions = {
       from: 'Ads.Ng <noreply@yourapp.com>',
       to: to,

@@ -59,7 +59,7 @@ export class CretiveProductsService {
     if (files && files.length > 0) {
       for (const file of files) {
         try {
-          const filePath = `FileUploads/${file.filename}`;
+          const filePath = `${process.env.Base_Url || process.env.Base_Url_Local}/uploads/${file.filename}`;
           imageUrls.push(filePath);
         } catch (error) {
           console.error('File Save Error:', error);
@@ -287,7 +287,7 @@ export class CretiveProductsService {
     if (files && files.length > 0) {
       for (const file of files) {
         try {
-          const filePath = `FileUploads/${file.filename}`;
+          const filePath = `${process.env.Base_Url || process.env.Base_Url_Local}/uploads/${file.filename}`;
           imageUrls.push(filePath);
         } catch (error) {
           console.error('File Save Error:', error);

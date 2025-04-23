@@ -11,6 +11,7 @@ import {
 } from 'src/cretive-products/entities/cretive-product.entity';
 import { PaystackService } from './paystack.service';
 import { AdminUser, AdminUserSchema } from 'src/admin/entities/admin.entity';
+import { MailService } from './Services/mail.service';
 
 @Module({
   imports: [
@@ -34,6 +35,6 @@ import { AdminUser, AdminUserSchema } from 'src/admin/entities/admin.entity';
     ]),
   ],
   controllers: [OrderController],
-  providers: [OrderService, PaystackService],
+  providers: [OrderService, MailService, PaystackService],
 })
 export class OrderModule {}

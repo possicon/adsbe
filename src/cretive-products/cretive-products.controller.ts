@@ -37,8 +37,12 @@ export class CretiveProductsController {
     FilesInterceptor('fileUrl', 5, {
       storage: diskStorage({
         destination: './FileUploads',
+
         filename: (req, file, cb) => {
-          cb(null, `${Date.now()}-${file.originalname}`);
+          const sanitized = file.originalname
+            .replace(/\s+/g, '')
+            .replace(/[^a-zA-Z0-9.-]/g, '');
+          cb(null, `${Date.now()}-${sanitized}`);
         },
       }),
       limits: { files: 5 },
@@ -118,7 +122,10 @@ export class CretiveProductsController {
       storage: diskStorage({
         destination: './FileUploads',
         filename: (req, file, cb) => {
-          cb(null, `${Date.now()}-${file.originalname}`);
+          const sanitized = file.originalname
+            .replace(/\s+/g, '')
+            .replace(/[^a-zA-Z0-9.-]/g, '');
+          cb(null, `${Date.now()}-${sanitized}`);
         },
       }),
       limits: { files: 5 },
