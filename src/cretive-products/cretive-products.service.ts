@@ -29,13 +29,78 @@ export class CretiveProductsService {
       urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
     });
   }
+  async createPoroduct(
+    createCretiveProductDto: CreateCretiveProductDto,
+    userId: string,
+    files?: Express.Multer.File[],
+  ) {
+    const { title, description, category, price, productBenefits, fileType } =
+      createCretiveProductDto;
+
+    const adminUser: any = await this.AdminUserModel.findOne({ userId });
+    if (!adminUser || adminUser.isAdmin !== true) {
+      throw new BadRequestException(
+        'Only Admins are Authorized to create Product',
+      );
+    }
+
+    const nameExists = await this.CreativeProductsModel.findOne({
+      title,
+      category,
+      postedBy: userId,
+    });
+
+    if (nameExists) {
+      throw new BadRequestException('Creatives already been created');
+    }
+
+    const imageUrls: string[] = [];
+
+    if (files && files.length > 0) {
+      for (const file of files) {
+        try {
+          const filePath = `FileUploads/${file.filename}`;
+          imageUrls.push(filePath);
+        } catch (error) {
+          console.error('File Save Error:', error);
+          throw new BadRequestException('Error saving creative file(s)');
+        }
+      }
+    }
+
+    const createData = new this.CreativeProductsModel({
+      title,
+      description,
+      category,
+      fileType,
+      price,
+      postedBy: userId,
+      productBenefits,
+      fileUrl: imageUrls,
+    });
+
+    const result = await createData.save();
+    return {
+      id: result._id,
+      title: result.title,
+      description: result.description,
+      category: result.category,
+      productBenefits: result.productBenefits,
+      fileType: result.fileType,
+      fileUrl: result.fileUrl,
+      price: result.price,
+      status: result.status,
+      postedBy: result.postedBy,
+      slug: result.slug,
+    };
+  }
 
   async create(
     createCretiveProductDto: CreateCretiveProductDto,
     userId: string,
     files?: Express.Multer.File[],
   ) {
-    const { title, description, category, price, fileType } =
+    const { title, description, category, price, productBenefits, fileType } =
       createCretiveProductDto;
 
     const adminUser: any = await this.AdminUserModel.findOne({ userId });
@@ -84,6 +149,7 @@ export class CretiveProductsService {
       fileType,
       price,
       postedBy: userId,
+      productBenefits,
       fileUrl: imageUrls,
     });
 
@@ -93,6 +159,7 @@ export class CretiveProductsService {
       title: result.title,
       description: result.description,
       category: result.category,
+      productBenefits: result.productBenefits,
       fileType: result.fileType,
       fileUrl: result.fileUrl,
       price: result.price,
@@ -107,8 +174,16 @@ export class CretiveProductsService {
     userId: string,
   ) {
     console.log(userId);
-    const { title, description, category, price, fileType, fileUrl, postedBy } =
-      createCretiveProductDto;
+    const {
+      title,
+      description,
+      category,
+      price,
+      productBenefits,
+      fileType,
+      fileUrl,
+      postedBy,
+    } = createCretiveProductDto;
     const adminUser: any = await this.AdminUserModel.findOne({ userId });
     if (!adminUser || adminUser.isAdmin !== true) {
       throw new BadRequestException(
@@ -139,6 +214,7 @@ export class CretiveProductsService {
       category,
       fileType,
       price,
+      productBenefits,
       postedBy: userId,
       fileUrl: imageUrls,
     });
@@ -152,7 +228,7 @@ export class CretiveProductsService {
       category: result.category,
       fileType: result.fileType,
       fileUrl: result.fileUrl,
-
+      productBenefits: result.productBenefits,
       price: result.price,
       status: result.status,
 
@@ -186,6 +262,78 @@ export class CretiveProductsService {
     }
 
     return data;
+  }
+
+  async updateProductLocalStorage(
+    id: string,
+    userId: string,
+    updateProductDto: UpdateCretiveProductDto,
+    files?: Express.Multer.File[],
+  ) {
+    const adminUser: any = await this.AdminUserModel.findOne({ userId });
+    if (!adminUser || adminUser.isAdmin !== true) {
+      throw new BadRequestException(
+        'Only Admins are Authorized to update Product',
+      );
+    }
+
+    const existingEvent = await this.CreativeProductsModel.findById(id).exec();
+    if (!existingEvent) {
+      throw new NotFoundException('Event not found');
+    }
+
+    let imageUrls: string[] = existingEvent.fileUrl || [];
+
+    if (files && files.length > 0) {
+      for (const file of files) {
+        try {
+          const filePath = `FileUploads/${file.filename}`;
+          imageUrls.push(filePath);
+        } catch (error) {
+          console.error('File Save Error:', error);
+          throw new BadRequestException('Error saving creative file(s)');
+        }
+      }
+
+      updateProductDto.fileUrl = imageUrls;
+    }
+
+    if (
+      updateProductDto.title &&
+      updateProductDto.title !== existingEvent.title
+    ) {
+      const baseSlug = slugify(updateProductDto.title, {
+        lower: true,
+        strict: true,
+      });
+
+      let uniqueSlug = baseSlug;
+      let suffix = 1;
+
+      while (await this.CreativeProductsModel.findOne({ slug: uniqueSlug })) {
+        uniqueSlug = `${baseSlug}-${suffix++}`;
+      }
+
+      updateProductDto.slug = uniqueSlug;
+    }
+
+    const updateQuery: UpdateQuery<CreativeProducts> = {
+      ...existingEvent.toObject(),
+      ...updateProductDto,
+      fileUrl: imageUrls,
+    };
+
+    const updatedEvent = await this.CreativeProductsModel.findByIdAndUpdate(
+      id,
+      updateQuery,
+      { new: true },
+    ).exec();
+
+    if (!updatedEvent) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return updatedEvent;
   }
   async updateProduct(
     id: string,

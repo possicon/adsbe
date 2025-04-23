@@ -61,6 +61,9 @@ export class CreativeProducts extends Document {
     default: 'pending',
   })
   status: string;
+
+  @Prop({ type: [String], default: [], required: false })
+  productBenefits: string[];
 }
 const CreativeProductsSchema = SchemaFactory.createForClass(CreativeProducts);
 

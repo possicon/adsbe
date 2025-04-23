@@ -37,7 +37,7 @@ export class DeliveryStatus {
   @Prop({
     required: false,
     enum: ['ongoing', 'delivered', 'on-review'],
-    default: 'ongiong',
+    default: 'ongoing',
   })
   deliveryStatus: string;
 

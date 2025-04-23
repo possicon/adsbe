@@ -20,7 +20,7 @@ import { RefreshToken } from 'src/auth/entities/refresh-token.schema';
 import * as bcrypt from 'bcrypt';
 import { User } from 'src/auth/entities/auth.entity';
 import { CreativeProducts } from 'src/cretive-products/entities/cretive-product.entity';
-import { Order } from 'src/order/entities/order.entity';
+import { DeliveryStatus, Order } from 'src/order/entities/order.entity';
 import { DeliveryCommentDto } from './dto/DeliveryComment.dto';
 import { UpdateDeliveryStatusDto } from './dto/UpdateDeliveryStatus.dto';
 
@@ -851,4 +851,40 @@ export class AdminService {
     addComment.deliveryComment.push(newComment);
     return await addComment.save();
   }
+  async updateOrdersWithMissingDeliveryStatus(userId: any) {
+    const defaultDeliveryStatus = new DeliveryStatus();
+    defaultDeliveryStatus.deliveryStatus = 'ongoing';
+    defaultDeliveryStatus.createdAt = new Date();
+    defaultDeliveryStatus.userId = userId;
+
+    const result = await this.OrderModel.updateMany(
+      {
+        $or: [{ deliveryStatus: { $exists: false } }, { deliveryStatus: null }],
+      },
+      {
+        $set: { deliveryStatus: defaultDeliveryStatus },
+      },
+    );
+
+    return result;
+  }
+
+  // async updateOrdersWithMissingDeliveryStatus(userId: string) {
+  //   const defaultDeliveryStatus = {
+  //     deliveryStatus: 'ongoing',
+  //     createdAt: new Date(),
+  //     userId: userId,
+  //   };
+
+  //   const result = await this.OrderModel.updateMany(
+  //     {
+  //       $or: [{ deliveryStatus: { $exists: false } }, { deliveryStatus: null }],
+  //     },
+  //     {
+  //       $set: { deliveryStatus: defaultDeliveryStatus },
+  //     },
+  //   );
+
+  //   return result;
+  // }
 }
