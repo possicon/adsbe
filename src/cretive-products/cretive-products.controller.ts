@@ -31,18 +31,34 @@ export class CretiveProductsController {
   constructor(
     private readonly cretiveProductsService: CretiveProductsService,
   ) {}
-
   @Post()
   @UseGuards(UserAuthGuard)
   @UseInterceptors(
     FilesInterceptor('fileUrl', 5, {
+      storage: diskStorage({
+        destination: './FileUploads',
+        filename: (req, file, cb) => {
+          cb(null, `${Date.now()}-${file.originalname}`);
+        },
+      }),
+      limits: { files: 5 },
+    }),
+  )
+  async createCreativeProducts(
+    @Body('createDto') createDto: string,
+    @Req() req,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    const userId = req.userId;
+    const parsedDto = JSON.parse(createDto); // convert string to object
+    return this.cretiveProductsService.createPoroduct(parsedDto, userId, files);
+  }
+  @Post('create')
+  @UseGuards(UserAuthGuard)
+  @UseInterceptors(
+    FilesInterceptor('fileUrl', 5, {
       storage: memoryStorage(),
-      // storage: diskStorage({
-      //   destination: './FileUploads',
-      //   filename: (req, file, cb) => {
-      //     cb(null, `${Date.now()}-${file.originalname}`);
-      //   },
-      // }),
+
       limits: { files: 5 },
     }),
   )
@@ -96,6 +112,36 @@ export class CretiveProductsController {
     );
   }
   @Patch(':id')
+  @UseGuards(UserAuthGuard)
+  @UseInterceptors(
+    FilesInterceptor('fileUrl', 5, {
+      storage: diskStorage({
+        destination: './FileUploads',
+        filename: (req, file, cb) => {
+          cb(null, `${Date.now()}-${file.originalname}`);
+        },
+      }),
+      limits: { files: 5 },
+    }),
+  )
+  async updateProductLocal(
+    @Param('id') id: string,
+    @Body('updateProductDto') updateProductDto: string,
+
+    @UploadedFiles()
+    files: { files?: Express.Multer.File[] },
+    @Req() req,
+  ) {
+    const userId: string = req.userId;
+    const parsedDto = JSON.parse(updateProductDto);
+    return this.cretiveProductsService.updateProductLocalStorage(
+      id,
+      userId,
+      parsedDto,
+      files?.files || [],
+    );
+  }
+  @Patch(':id/newUpdate')
   @UseGuards(UserAuthGuard)
   @UseInterceptors(
     FilesInterceptor('fileUrl', 5, {
