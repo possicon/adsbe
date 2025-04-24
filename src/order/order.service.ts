@@ -205,7 +205,8 @@ export class OrderService {
       };
     } catch (error) {
       throw new BadRequestException(
-        error.response?.data?.message || 'Error verifying payment',
+        error.response?.data?.message ||
+          'Error verifying payment, User didnt not complete transaction',
       );
     }
   }
