@@ -50,10 +50,10 @@ export class MailService {
                 <li><strong>Payment Gateway: </strong> Paystack</li>
                  <li><strong>Order Reference Number:</strong> ${reference}</li>
                     <li><strong>Amount Paid:</strong> ₦${amount.toLocaleString()}</li>
-                    <li><strong>Transaction Status:</strong> peending</li>
+                    <li><strong>Transaction Status:</strong> pending</li>
                 </ul>
                 <p style="font-size: 16px; color: #555;">
-                    You can  track your order with this reference number ${reference}
+                    You can  track your order with this reference number <strong> ${reference} </strong>
                 </p>
                 <p style="font-size: 16px; color: #555;">
                     You can access your dashboard for more details or to track your order.
