@@ -138,4 +138,80 @@ export class MailService {
 
     await this.transporter.sendMail(mailOptions);
   }
+
+  async Invoice(
+    email: string,
+    firstName: string,
+    lastName: string,
+    amount: number,
+    referencePay: string,
+    trans_status: string,
+    orderItems: any[],
+    orderDate: Date,
+  ) {
+    const formattedDate = new Date(orderDate).toLocaleDateString();
+    const itemsHtml = orderItems
+      .map((item) => {
+        const productName = item?.productId?.title || 'N/A';
+        const quantity = item?.totalQuantity || 0;
+        const price = item?.productId?.price || 0;
+        const total = quantity * price;
+
+        return `
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ccc;">${productName}</td>
+        <td style="padding: 8px; border: 1px solid #ccc;">${quantity}</td>
+        <td style="padding: 8px; border: 1px solid #ccc;">₦${total.toLocaleString()}</td>
+      </tr>
+    `;
+      })
+      .join('');
+
+    const mailOptions = {
+      from: 'Ads.Ng <noreply@yourapp.com>',
+      to: email,
+      subject: 'Invoice - Payment Verified',
+      html: `
+        <div style="font-family: 'Arial', sans-serif; max-width: 700px; margin: auto; padding: 20px; background-color: #fff;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <img src="https://aicdn.picsart.com/f8f1f930-4637-4e74-808a-ea23074cc28a.png" width="150" />
+            <h2 style="color: #333;">Payment Invoice</h2>
+            <p style="color: #777;">Transaction successful on ${formattedDate}</p>
+          </div>
+  
+          <p>Hi <strong>${firstName} ${lastName}</strong>,</p>
+          <p>Thank you for your purchase! Here are your order details:</p>
+  
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <thead>
+              <tr>
+                <th style="padding: 10px; border: 1px solid #ccc;">Product</th>
+                <th style="padding: 10px; border: 1px solid #ccc;">Quantity</th>
+                <th style="padding: 10px; border: 1px solid #ccc;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+  
+          <p><strong>Payment Reference:</strong> ${referencePay}</p>
+          <p><strong>Total Amount Paid:</strong> ₦${amount.toLocaleString()}</p>
+          <p><strong>Transaction Status:</strong> ${trans_status}</p>
+  
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="https://adsfe.ogini.com/" style="background: #4CAF50; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">Go to Dashboard</a>
+          </div>
+  
+          <hr style="margin: 30px 0;" />
+  
+          <div style="text-align: center; color: #aaa;">
+            <p>&copy; ${new Date().getFullYear()} Ads.Ng. All rights reserved.</p>
+          </div>
+        </div>
+      `,
+    };
+
+    await this.transporter.sendMail(mailOptions);
+  }
 }
