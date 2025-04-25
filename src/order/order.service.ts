@@ -142,6 +142,99 @@ export class OrderService {
         `${this.PAYSTACK_VERIFY_URL}/${reference}`,
         {
           headers: {
+            Authorization: `Bearer ${this.configService.get<string>('PAYSTACK_SECRET_KEY')}`,
+          },
+        },
+      );
+
+      const data = response.data.data;
+      if (data.status !== 'success') {
+        throw new BadRequestException('Payment verification failed.');
+      }
+
+      const order = await this.OrderModel.findOne({
+        'payStackPayment.reference': reference,
+      });
+      if (!order)
+        throw new BadRequestException(
+          `Order with reference ${reference} not found.`,
+        );
+
+      const user = await this.UserModel.findById(order.userId);
+      if (!user)
+        throw new BadRequestException(`User with ID ${order.userId} not found`);
+
+      // Update payment details
+      order.isPaid = true;
+      order.payStackPayment.status = PaymentStatus.paid;
+      order.payStackPayment.transactionStatus = data.status;
+      order.amountPaid = (data.amount / 100).toString();
+      order.grandTotal = data.amount / 100;
+      await order.save();
+
+      const email = user.email;
+      const firstName = user.firstName;
+      const lastName = user.lastName;
+      const amount: any = order.grandTotal;
+      const referencePay = reference;
+      const trans_status = data.status;
+      try {
+        await this.mailService.VerifyOrder(
+          email,
+          firstName,
+          lastName,
+          amount,
+          referencePay,
+          trans_status,
+        );
+      } catch (error) {
+        throw new Error(`Failed to send email to ${email}`);
+      }
+      // Fetch detailed order items
+      const orderDetails: any = await this.OrderModel.findById(order._id)
+        .populate({ path: 'orderItems.productId', model: 'CreativeProducts' })
+        .populate({ path: 'userId', select: '-password' })
+        .exec();
+
+      // Send Invoice
+      try {
+        await this.mailService.Invoice(
+          user.email,
+          user.firstName,
+          user.lastName,
+          order.grandTotal,
+          reference,
+          data.status,
+          orderDetails.orderItems,
+          orderDetails.createdAt,
+        );
+        console.log('mail order oderDetails', orderDetails.orderItems);
+      } catch (error) {
+        throw new Error(`Failed to send invoice email to ${user.email}`);
+      }
+
+      return {
+        message: 'Payment verified successfully',
+        orderId: order._id,
+        reference: order.payStackPayment.reference,
+        amountPaid: order.amountPaid,
+        status: order.payStackPayment.status,
+        redirectUrl: order.payStackPayment.status ? order.redirect_url : null,
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        error.response?.data?.message ||
+          'Error verifying payment, User did not complete transaction',
+      );
+    }
+  }
+
+  async verifyPaystackPaymentWithoutMailInvoice(reference: string) {
+    try {
+      const response = await axios.get(
+        `${this.PAYSTACK_VERIFY_URL}/${reference}`,
+        {
+          headers: {
             Authorization: `Bearer ${this.configService.get<string>(
               'PAYSTACK_SECRET_KEY',
             )}`,
@@ -210,7 +303,23 @@ export class OrderService {
       );
     }
   }
+  async findOrderDetails(id: string) {
+    const order = await this.OrderModel.findById(id)
+      .populate({
+        path: 'orderItems.productId',
+        model: 'CreativeProducts',
+      })
+      .populate({
+        path: 'userId',
+        select: '-password', // Exclude the password field
+      })
 
+      .exec();
+    if (!order) {
+      throw new BadRequestException(`Order with ${id} not found`);
+    }
+    return { order };
+  }
   async findAllOrderPagination(query: Query): Promise<Order[]> {
     const resPerPage = 10;
     const currentPage = Number(query.page) || 1;
@@ -390,6 +499,47 @@ export class OrderService {
   }
 
   async addCommentFormData(
+    id: string,
+    addCommentDto: AddCommentDto,
+    userId: string,
+    file?: Express.Multer.File,
+  ) {
+    const addComment = await this.OrderModel.findById(id);
+    if (!addComment) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const customer = await this.OrderModel.findOne({ userId });
+    const adminUser = await this.AdminUserModel.findOne({ userId });
+    if (!customer && !adminUser) {
+      throw new NotFoundException(
+        'Only Admin & Customer for the order is permitted to add a comment',
+      );
+    }
+    let imageUrl: string | undefined;
+    if (file) {
+      try {
+        const filePath = `${process.env.Base_Url || process.env.Base_Url_Local}/uploads/${file.filename}`;
+        // PicsUrl.push(filePath);
+        imageUrl = filePath;
+        addCommentDto.fileUrl = imageUrl;
+      } catch (error) {
+        console.error('File Save Error:', error);
+        throw new BadRequestException('Error saving file(s)');
+      }
+    }
+
+    const newComment: any = {
+      userId: userId,
+      commentText: addCommentDto.commentText,
+      fileUrl: addCommentDto.fileUrl,
+      createdAt: new Date(),
+    };
+
+    addComment.comments.push(newComment);
+    return await addComment.save();
+  }
+  async addCommentFormDataCLOUD(
     id: string,
     addCommentDto: AddCommentDto,
     userId: string,

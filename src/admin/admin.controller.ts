@@ -25,6 +25,7 @@ import { Query as ExpressQuery } from 'express-serve-static-core';
 import { UpdateDeliveryStatusDto } from './dto/UpdateDeliveryStatus.dto';
 import { DeliveryCommentDto } from './dto/DeliveryComment.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
@@ -309,8 +310,19 @@ export class AdminController {
 
   @UseGuards(UserAuthGuard)
   @Patch(':id/delivery-comment')
-  @UseInterceptors(FileInterceptor('fileUrl'))
-  // @UseInterceptors(FileInterceptor('img'))
+  @UseInterceptors(
+    FileInterceptor('fileUrl', {
+      storage: diskStorage({
+        destination: './FileUploads',
+        filename: (req, file, cb) => {
+          const sanitized = file.originalname
+            .replace(/\s+/g, '')
+            .replace(/[^a-zA-Z0-9.-]/g, '');
+          cb(null, `${Date.now()}-${sanitized}`);
+        },
+      }),
+    }),
+  )
   async addCommentFormData(
     @Param('id') id: string,
     @Body() addCommentDto: DeliveryCommentDto,

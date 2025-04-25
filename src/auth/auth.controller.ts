@@ -24,6 +24,7 @@ import { UserAuthGuard } from './guards/auth.guard';
 import { UpdateProfileDto } from './dto/profileUpdate.dto';
 import { ForgotPasswordDto } from './dto/forget-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { diskStorage } from 'multer';
 
 @Controller('users')
 export class AuthController {
@@ -37,6 +38,29 @@ export class AuthController {
   ) {
     // Pass both signup data and the optional profilePics to the service
     return this.authService.create(signupData);
+  }
+
+  @Post('new')
+  @UseInterceptors(
+    FileInterceptor('profilePics', {
+      storage: diskStorage({
+        destination: './FileUploads',
+        filename: (req, file, cb) => {
+          const sanitized = file.originalname
+            .replace(/\s+/g, '')
+            .replace(/[^a-zA-Z0-9.-]/g, '');
+          cb(null, `${Date.now()}-${sanitized}`);
+        },
+      }),
+    }),
+  )
+  async signupFormData(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('signupData') createAuthDto: string,
+  ) {
+    const parsedDto = JSON.parse(createAuthDto);
+    // Pass both signup data and the optional profilePics to the service
+    return this.authService.createFormData(parsedDto, file);
   }
   @Post('login')
   async login(@Body() credentials: LoginDto) {
@@ -81,7 +105,19 @@ export class AuthController {
 
   @UseGuards(UserAuthGuard)
   @Patch('profile/update')
-  @UseInterceptors(FileInterceptor('profilePics'))
+  @UseInterceptors(
+    FileInterceptor('profilePics', {
+      storage: diskStorage({
+        destination: './FileUploads',
+        filename: (req, file, cb) => {
+          const sanitized = file.originalname
+            .replace(/\s+/g, '')
+            .replace(/[^a-zA-Z0-9.-]/g, '');
+          cb(null, `${Date.now()}-${sanitized}`);
+        },
+      }),
+    }),
+  )
   async updateProfile(
     @UploadedFile() file: Express.Multer.File,
     // @Body() updateUserDto: UpdateProfileDto,
@@ -90,11 +126,13 @@ export class AuthController {
   ) {
     const id = req.userId;
     const parsedDto = JSON.parse(updateUserDto);
-    return this.authService.updateProfile(id, parsedDto, file);
+    return this.authService.updateProfileformData(id, parsedDto, file);
   }
 
+  @UseGuards(UserAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+  remove(@Param('id') id: string, @Req() req) {
+    const userId: any = req.userId;
+    return this.authService.remove(id, userId);
   }
 }
