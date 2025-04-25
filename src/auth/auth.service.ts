@@ -57,6 +57,79 @@ export class AuthService {
       userType,
     } = createAuthDto;
 
+    const emailInUse = await this.UserModel.findOne({ email });
+    if (emailInUse) {
+      throw new BadRequestException('Email already in use');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    let profilePicsUrl: string | undefined;
+
+    if (profilePics) {
+      try {
+        console.log('Received profilePics:', profilePics);
+
+        const img = await this.imagekit.upload({
+          file: profilePics,
+          fileName: `${firstName}-${lastName}-${Date.now()}.jpg`,
+          folder: '/profilePics',
+        });
+
+        console.log('ImageKit upload response:', img);
+        profilePicsUrl = img.url;
+      } catch (error) {
+        console.error('Error uploading to ImageKit:', error);
+        throw new BadRequestException('Error uploading profile picture');
+      }
+    }
+
+    const newUser = new this.UserModel({
+      email,
+      password: hashedPassword,
+      firstName,
+      address,
+      lastName,
+      phoneNumber,
+      userType,
+      profilePics: profilePicsUrl,
+    });
+
+    await newUser.save();
+
+    try {
+      await this.mailService.signupMail(email, firstName, lastName);
+    } catch (error) {
+      throw new Error(`Failed to send email to ${email}`);
+    }
+
+    // 👇 Use the same token generation method as login
+    const tokens = await this.generateUserTokens(newUser._id);
+
+    return {
+      ...tokens,
+      userId: newUser._id,
+      email: newUser.email,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      address: newUser.address,
+      phoneNumber: newUser.phoneNumber,
+      userType: newUser.userType,
+      profilePics: newUser.profilePics,
+    };
+  }
+
+  async createNew(createAuthDto: CreateAuthDto) {
+    const {
+      email,
+      password,
+      firstName,
+      lastName,
+      profilePics,
+      phoneNumber,
+      address,
+      userType,
+    } = createAuthDto;
+
     // Check if email is in use
     const emailInUse = await this.UserModel.findOne({ email });
     if (emailInUse) {
