@@ -21,7 +21,8 @@ import { UserAuthGuard } from 'src/auth/guards/auth.guard';
 import { Order } from './entities/order.entity';
 import { Query as ExpressQuery } from 'express-serve-static-core';
 import { AddCommentDto } from './dto/AddOrderComment.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
@@ -104,10 +105,39 @@ export class OrderController {
     const userId = req.userId;
     return this.orderService.addComment(id, addCommentDto, userId);
   }
+  // @UseGuards(UserAuthGuard)
+  // @Patch(':id/comment')
+  // @UseInterceptors(FileInterceptor('fileUrl'))
+  // // @UseInterceptors(FileInterceptor('img'))
+  // async addCommentFormData(
+  //   @Param('id') id: string,
+  //   @Body() addCommentDto: AddCommentDto,
+  //   @UploadedFile() file: Express.Multer.File,
+  //   @Req() req,
+  // ) {
+  //   const userId = req.userId;
+  //   return this.orderService.addCommentFormData(
+  //     id,
+  //     addCommentDto,
+  //     userId,
+  //     file,
+  //   );
+  // }
   @UseGuards(UserAuthGuard)
   @Patch(':id/comment')
-  @UseInterceptors(FileInterceptor('fileUrl'))
-  // @UseInterceptors(FileInterceptor('img'))
+  @UseInterceptors(
+    FileInterceptor('fileUrl', {
+      storage: diskStorage({
+        destination: './FileUploads',
+        filename: (req, file, cb) => {
+          const sanitized = file.originalname
+            .replace(/\s+/g, '')
+            .replace(/[^a-zA-Z0-9.-]/g, '');
+          cb(null, `${Date.now()}-${sanitized}`);
+        },
+      }),
+    }),
+  )
   async addCommentFormData(
     @Param('id') id: string,
     @Body() addCommentDto: AddCommentDto,

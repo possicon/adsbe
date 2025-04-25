@@ -758,7 +758,7 @@ export class AdminService {
     order.deliveryStatus = newStatus as any;
     return order.save();
   }
-  async addDeliveryCommentFormData(
+  async addDeliveryComment(
     id: string,
     addCommentDto: DeliveryCommentDto,
     userId: string,
@@ -809,7 +809,44 @@ export class AdminService {
     addComment.deliveryComment.push(newComment);
     return await addComment.save();
   }
-  async addDeliveryComment(
+  async addDeliveryCommentFormData(
+    id: string,
+    addCommentDto: DeliveryCommentDto,
+    userId: string,
+    file?: Express.Multer.File,
+  ) {
+    const addComment = await this.OrderModel.findById(id);
+    if (!addComment) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const adminUser = await this.AdminUserModel.findOne({ userId });
+    if (!adminUser) {
+      throw new NotFoundException('Only Admin is permitted to add a comment');
+    }
+    let imageUrl: string | undefined;
+    if (file) {
+      try {
+        const filePath = `${process.env.Base_Url || process.env.Base_Url_Local}/uploads/${file.filename}`;
+        // PicsUrl.push(filePath);
+        imageUrl = filePath;
+        addCommentDto.fileUrl = imageUrl;
+      } catch (error) {
+        console.error('File Save Error:', error);
+        throw new BadRequestException('Error saving file(s)');
+      }
+    }
+    const newComment: any = {
+      userId: userId,
+      commentText: addCommentDto.commentText,
+      fileUrl: addCommentDto.fileUrl,
+      createdAt: new Date(),
+    };
+
+    addComment.deliveryComment.push(newComment);
+    return await addComment.save();
+  }
+  async addDeliveryCommenttocloudstorage(
     id: string,
     addCommentDto: DeliveryCommentDto,
     userId: string,
@@ -868,23 +905,4 @@ export class AdminService {
 
     return result;
   }
-
-  // async updateOrdersWithMissingDeliveryStatus(userId: string) {
-  //   const defaultDeliveryStatus = {
-  //     deliveryStatus: 'ongoing',
-  //     createdAt: new Date(),
-  //     userId: userId,
-  //   };
-
-  //   const result = await this.OrderModel.updateMany(
-  //     {
-  //       $or: [{ deliveryStatus: { $exists: false } }, { deliveryStatus: null }],
-  //     },
-  //     {
-  //       $set: { deliveryStatus: defaultDeliveryStatus },
-  //     },
-  //   );
-
-  //   return result;
-  // }
 }

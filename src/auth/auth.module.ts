@@ -10,6 +10,7 @@ import {
 import { ResetToken, ResetTokenSchema } from './entities/rest-token.schema';
 import { ImageKitServiceAuth } from './service/imageKit';
 import { MailService } from './service/mail.service';
+import { AdminUser, AdminUserSchema } from 'src/admin/entities/admin.entity';
 
 @Module({
   imports: [
@@ -25,6 +26,10 @@ import { MailService } from './service/mail.service';
       {
         name: ResetToken.name,
         schema: ResetTokenSchema,
+      },
+      {
+        name: AdminUser.name,
+        schema: AdminUserSchema,
       },
     ]),
   ],

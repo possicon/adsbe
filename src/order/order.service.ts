@@ -516,6 +516,47 @@ export class OrderService {
         'Only Admin & Customer for the order is permitted to add a comment',
       );
     }
+    let imageUrl: string | undefined;
+    if (file) {
+      try {
+        const filePath = `${process.env.Base_Url || process.env.Base_Url_Local}/uploads/${file.filename}`;
+        // PicsUrl.push(filePath);
+        imageUrl = filePath;
+        addCommentDto.fileUrl = imageUrl;
+      } catch (error) {
+        console.error('File Save Error:', error);
+        throw new BadRequestException('Error saving file(s)');
+      }
+    }
+
+    const newComment: any = {
+      userId: userId,
+      commentText: addCommentDto.commentText,
+      fileUrl: addCommentDto.fileUrl,
+      createdAt: new Date(),
+    };
+
+    addComment.comments.push(newComment);
+    return await addComment.save();
+  }
+  async addCommentFormDataCLOUD(
+    id: string,
+    addCommentDto: AddCommentDto,
+    userId: string,
+    file?: Express.Multer.File,
+  ) {
+    const addComment = await this.OrderModel.findById(id);
+    if (!addComment) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const customer = await this.OrderModel.findOne({ userId });
+    const adminUser = await this.AdminUserModel.findOne({ userId });
+    if (!customer && !adminUser) {
+      throw new NotFoundException(
+        'Only Admin & Customer for the order is permitted to add a comment',
+      );
+    }
 
     let imgUrl: string | undefined;
     if (file) {

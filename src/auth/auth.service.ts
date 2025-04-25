@@ -23,11 +23,14 @@ const ImageKit = require('imagekit');
 import { Query } from 'express-serve-static-core';
 import { UpdateProfileDto } from './dto/profileUpdate.dto';
 import { ResetToken } from './entities/rest-token.schema';
+import { AdminUser } from 'src/admin/entities/admin.entity';
 @Injectable()
 export class AuthService {
   private imagekit: ImageKit;
   constructor(
     @InjectModel(User.name) private UserModel: Model<User>,
+    @InjectModel(AdminUser.name)
+    private readonly AdminUserModel: Model<AdminUser>,
     @InjectModel(ResetToken.name)
     private ResetTokenModel: Model<ResetToken>,
     @InjectModel(RefreshToken.name)
@@ -84,6 +87,93 @@ export class AuthService {
       } catch (error) {
         console.error('Error uploading to ImageKit:', error); // Log error for debugging
         throw new BadRequestException('Error uploading profile picture');
+      }
+    }
+
+    // Log the profilePicsUrl before saving to MongoDB
+    console.log('Profile picture URL:', profilePicsUrl);
+
+    // Create user document and save in MongoDB
+    const newUser = new this.UserModel({
+      email,
+      password: hashedPassword,
+      firstName,
+      address,
+      lastName,
+      phoneNumber,
+      userType,
+      profilePics: profilePicsUrl, // Save profilePics URL if provided
+    });
+
+    await newUser.save();
+    try {
+      await this.mailService.signupMail(email, firstName, lastName);
+    } catch (error) {
+      throw new Error(`Failed to send email to ${email}`);
+    }
+    // Prepare JWT payload and sign the token
+    const payload = {
+      email: newUser.email,
+      sub: newUser._id,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      phoneNumber: newUser.phoneNumber,
+      profilePics: newUser.profilePics,
+      address: newUser.address,
+      userType: newUser.userType,
+    };
+
+    const token = this.jwtService.sign(payload);
+
+    return {
+      token,
+      user: {
+        _id: newUser._id,
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        address: newUser.address,
+        phoneNumber: newUser.phoneNumber,
+        userType: newUser.userType,
+        profilePics: newUser.profilePics, // Return profilePics in response if provided
+      },
+    };
+  }
+
+  async createFormData(
+    createAuthDto: CreateAuthDto,
+    file?: Express.Multer.File,
+  ) {
+    const {
+      email,
+      password,
+      firstName,
+      lastName,
+
+      phoneNumber,
+      address,
+      userType,
+    } = createAuthDto;
+
+    // Check if email is in use
+    const emailInUse = await this.UserModel.findOne({ email });
+    if (emailInUse) {
+      throw new BadRequestException('Email already in use');
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Initialize profilePicsUrl as undefined
+    let profilePicsUrl: string | undefined;
+    if (file) {
+      try {
+        const filePath = `${process.env.Base_Url || process.env.Base_Url_Local}/uploads/${file.filename}`;
+        // PicsUrl.push(filePath);
+        profilePicsUrl = filePath;
+      } catch (error) {
+        console.error('File Save Error:', error);
+        throw new BadRequestException('Error saving file(s)');
       }
     }
 
@@ -272,7 +362,44 @@ export class AuthService {
 
     return user;
   }
+  async updateProfileformData(
+    id: string,
+    updateUserDto: UpdateProfileDto,
+    file?: Express.Multer.File,
+  ): Promise<User> {
+    const existingUser = await this.UserModel.findById(id).exec();
+    if (!existingUser) {
+      throw new NotFoundException('User not found');
+    }
+    let profilePicsUrl: string | undefined;
+    if (file) {
+      try {
+        const filePath = `${process.env.Base_Url || process.env.Base_Url_Local}/uploads/${file.filename}`;
+        // PicsUrl.push(filePath);
+        profilePicsUrl = filePath;
+        updateUserDto.profilePics = profilePicsUrl;
+      } catch (error) {
+        console.error('File Save Error:', error);
+        throw new BadRequestException('Error saving file(s)');
+      }
+    }
 
+    // const updateQuery: UpdateQuery<User> = updateUserDto;
+    const updateQuery: UpdateQuery<User> = {
+      ...existingUser.toObject(), // Convert existing user to a plain object
+      ...updateUserDto, // Override fields with the new values from updateUserDto
+    };
+    // Update user in MongoDB
+    const user = await this.UserModel.findByIdAndUpdate(id, updateQuery, {
+      new: true,
+    }).exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
   async forgotPassword(email: string) {
     //Check that user exists
     const user = await this.UserModel.findOne({ email });
@@ -343,7 +470,16 @@ export class AuthService {
     return `This action updates a #${id} auth`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+  async remove(id: string, userId: string) {
+    const adminUser = await this.AdminUserModel.findOne({ userId: userId });
+    if (!adminUser || adminUser.isAdmin !== true) {
+      throw new BadRequestException('Only Admin can delete a user');
+    }
+
+    const deleteUser = await this.UserModel.findByIdAndDelete(id);
+    if (!deleteUser) {
+      throw new BadRequestException('User not found');
+    }
+    return { message: 'User Deleted' };
   }
 }
