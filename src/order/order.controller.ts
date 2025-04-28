@@ -127,6 +127,7 @@ export class OrderController {
   @Patch(':id/comment')
   @UseInterceptors(
     FileInterceptor('fileUrl', {
+      limits: { fileSize: 50 * 1024 * 1024 },
       storage: diskStorage({
         destination: './FileUploads',
         filename: (req, file, cb) => {
