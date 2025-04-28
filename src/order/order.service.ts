@@ -359,11 +359,56 @@ export class OrderService {
       .exec();
     return data;
   }
+  async findLoginUserAllApprovedOrderPagination(
+    query: Query,
+    userId: string,
+  ): Promise<Order[]> {
+    const resPerPage = 10;
+    const currentPage = Number(query.page) || 1;
+    const skip = resPerPage * (currentPage - 1);
+    const data = await this.OrderModel.find({ userId, isPaid: true })
+      .sort({ createdAt: -1 })
+      .limit(resPerPage)
+      .skip(skip)
+      .populate({
+        path: 'userId',
+        select: '-password',
+      })
+      .populate({
+        path: 'orderItems.productId',
+        model: 'CreativeProducts',
+      })
+      .exec();
+    return data;
+  }
+
   async findAllNotApprovedOrderPagination(query: Query): Promise<Order[]> {
     const resPerPage = 10;
     const currentPage = Number(query.page) || 1;
     const skip = resPerPage * (currentPage - 1);
     const data = await this.OrderModel.find({ isPaid: false })
+      .sort({ createdAt: -1 })
+      .limit(resPerPage)
+      .skip(skip)
+      .populate({
+        path: 'userId',
+        select: '-password',
+      })
+      .populate({
+        path: 'orderItems.productId',
+        model: 'CreativeProducts',
+      })
+      .exec();
+    return data;
+  }
+  async findLoginUserAllNotApprovedOrderPagination(
+    query: Query,
+    userId: string,
+  ): Promise<Order[]> {
+    const resPerPage = 10;
+    const currentPage = Number(query.page) || 1;
+    const skip = resPerPage * (currentPage - 1);
+    const data = await this.OrderModel.find({ userId, isPaid: false })
       .sort({ createdAt: -1 })
       .limit(resPerPage)
       .skip(skip)

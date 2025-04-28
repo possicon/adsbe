@@ -45,7 +45,7 @@ export class CretiveProductsController {
           cb(null, `${Date.now()}-${sanitized}`);
         },
       }),
-      limits: { files: 5 },
+      limits: { files: 5, fileSize: 50 * 1024 * 1024 },
     }),
   )
   async createCreativeProducts(
@@ -128,7 +128,7 @@ export class CretiveProductsController {
           cb(null, `${Date.now()}-${sanitized}`);
         },
       }),
-      limits: { files: 5 },
+      limits: { files: 5, fileSize: 50 * 1024 * 1024 },
     }),
   )
   async updateProductLocal(

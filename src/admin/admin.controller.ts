@@ -312,6 +312,7 @@ export class AdminController {
   @Patch(':id/delivery-comment')
   @UseInterceptors(
     FileInterceptor('fileUrl', {
+      limits: { fileSize: 50 * 1024 * 1024 },
       storage: diskStorage({
         destination: './FileUploads',
         filename: (req, file, cb) => {
