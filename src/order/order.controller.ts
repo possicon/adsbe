@@ -54,6 +54,31 @@ export class OrderController {
     return this.orderService.findAllNotApprovedOrderPagination(query);
   }
 
+  @UseGuards(UserAuthGuard)
+  @Get('approved/all/user')
+  async getLoginUserAllApprovedOrdersPagination(
+    @Query() query: ExpressQuery,
+    @Req() req,
+  ): Promise<Order[]> {
+    const userId = req.userId;
+    return this.orderService.findLoginUserAllApprovedOrderPagination(
+      query,
+      userId,
+    );
+  }
+
+  @UseGuards(UserAuthGuard)
+  @Get('notapproved/all/user')
+  async getLoginUserAllNotApprovedOrdersPagination(
+    @Query() query: ExpressQuery,
+    @Req() req,
+  ): Promise<Order[]> {
+    const userId = req.userId;
+    return this.orderService.findLoginUserAllNotApprovedOrderPagination(
+      query,
+      userId,
+    );
+  }
   @Get('pag/all')
   async getAllOrdersPagination(@Query() query: ExpressQuery): Promise<Order[]> {
     return this.orderService.findAllOrderPagination(query);
