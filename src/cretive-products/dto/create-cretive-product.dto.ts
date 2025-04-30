@@ -20,10 +20,14 @@ export class CreateCretiveProductDto {
   @IsString()
   title: string;
 
-  @IsNotEmpty()
-  @IsString()
-  @MinLength(10)
-  @MaxLength(1500)
+  @IsNotEmpty({ message: 'Description is required' })
+  @IsString({ message: 'Description must be a string' })
+  @MinLength(10, {
+    message: 'Description is too short. Minimum length is 10 characters',
+  })
+  @MaxLength(1500, {
+    message: 'Description is too long. Maximum length is 1500 characters',
+  })
   description: string;
 
   @IsOptional()
