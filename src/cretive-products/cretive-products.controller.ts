@@ -54,7 +54,7 @@ export class CretiveProductsController {
     @UploadedFiles() files: Express.Multer.File[],
   ) {
     const userId = req.userId;
-    const parsedDto = JSON.parse(createDto); // convert string to object
+    const parsedDto = JSON.parse(createDto);
     return this.cretiveProductsService.createPoroduct(parsedDto, userId, files);
   }
   @Post('create')
@@ -72,7 +72,7 @@ export class CretiveProductsController {
     @UploadedFiles() files: Express.Multer.File[],
   ) {
     const userId = req.userId;
-    const parsedDto = JSON.parse(createDto); // convert string to object
+    const parsedDto = JSON.parse(createDto);
     return this.cretiveProductsService.create(parsedDto, userId, files);
   }
 
