@@ -34,8 +34,15 @@ export class CretiveProductsService {
     userId: string,
     files?: Express.Multer.File[],
   ) {
-    const { title, description, category, price, productBenefits, fileType } =
-      createCretiveProductDto;
+    const {
+      title,
+      description,
+      category,
+      subCategory,
+      price,
+      productBenefits,
+      fileType,
+    } = createCretiveProductDto;
 
     const adminUser: any = await this.AdminUserModel.findOne({ userId });
     if (!adminUser || adminUser.isAdmin !== true) {
@@ -72,6 +79,7 @@ export class CretiveProductsService {
       title,
       description,
       category,
+      subCategory,
       fileType,
       price,
       postedBy: userId,
@@ -85,6 +93,7 @@ export class CretiveProductsService {
       title: result.title,
       description: result.description,
       category: result.category,
+      subCategory: result.subCategory,
       productBenefits: result.productBenefits,
       fileType: result.fileType,
       fileUrl: result.fileUrl,
@@ -536,6 +545,12 @@ export class CretiveProductsService {
 
     return data;
   }
+
+  async getAllSubCategories(): Promise<string[]> {
+    const subCategories =
+      await this.CreativeProductsModel.distinct('subCategory');
+    return subCategories;
+  }
   /////search for events
   async searchEvents(query: any): Promise<CreativeProducts[]> {
     const filter: FilterQuery<CreativeProducts> = {};
@@ -574,5 +589,32 @@ export class CretiveProductsService {
 
     addComment.comments.push(newComment);
     return await addComment.save();
+  }
+  async findProductsWithFiltersPagination(
+    query: Query,
+  ): Promise<CreativeProducts[]> {
+    const resPerPage = 10;
+    const currentPage = Number(query.page) || 1;
+    const skip = resPerPage * (currentPage - 1);
+
+    const filter: any = {};
+    if (query.category) {
+      filter.category = query.category;
+    }
+    if (query.subCategory) {
+      filter.subCategory = query.subCategory;
+    }
+
+    const data = await this.CreativeProductsModel.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(resPerPage)
+      .skip(skip)
+      .populate({
+        path: 'postedBy',
+        select: '-password',
+      })
+      .exec();
+
+    return data;
   }
 }

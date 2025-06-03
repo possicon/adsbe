@@ -13,6 +13,7 @@ import { AdminModule } from './admin/admin.module';
 import { OrderModule } from './order/order.module';
 
 import { join } from 'path';
+import { ContactUsModule } from './contact-us/contact-us.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { join } from 'path';
     CretiveProductsModule,
     AdminModule,
     OrderModule,
+    ContactUsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

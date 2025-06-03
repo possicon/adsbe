@@ -3,6 +3,14 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Model, Types } from 'mongoose';
 import slugify from 'slugify';
 
+export const SUB_CATEGORY_ENUM = [
+  'All Company Sizes',
+  'Brands',
+  'Agencies',
+  'Enterprise',
+  'ScaleUps',
+  'Others',
+];
 @Schema({ timestamps: true })
 export class Comment {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
@@ -31,6 +39,12 @@ export class CreativeProducts extends Document {
 
   @Prop({ required: true })
   category: string;
+
+  @Prop({
+    enum: SUB_CATEGORY_ENUM,
+    default: 'Others',
+  })
+  subCategory: string;
 
   @Prop({ enum: ['Image', 'Audio', 'Video', 'Other'], default: 'Other' })
   fileType: string;
