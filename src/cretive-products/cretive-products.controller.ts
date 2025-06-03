@@ -22,7 +22,10 @@ import {
   FileInterceptor,
   FilesInterceptor,
 } from '@nestjs/platform-express';
-import { CreativeProducts } from './entities/cretive-product.entity';
+import {
+  CreativeProducts,
+  SUB_CATEGORY_ENUM,
+} from './entities/cretive-product.entity';
 import { Query as ExpressQuery } from 'express-serve-static-core';
 import { AddCommentDto } from './dto/AddComment.dto';
 import { diskStorage, memoryStorage } from 'multer';
@@ -54,7 +57,7 @@ export class CretiveProductsController {
     @UploadedFiles() files: Express.Multer.File[],
   ) {
     const userId = req.userId;
-    const parsedDto = JSON.parse(createDto); // convert string to object
+    const parsedDto = JSON.parse(createDto);
     return this.cretiveProductsService.createPoroduct(parsedDto, userId, files);
   }
   @Post('create')
@@ -72,7 +75,7 @@ export class CretiveProductsController {
     @UploadedFiles() files: Express.Multer.File[],
   ) {
     const userId = req.userId;
-    const parsedDto = JSON.parse(createDto); // convert string to object
+    const parsedDto = JSON.parse(createDto);
     return this.cretiveProductsService.create(parsedDto, userId, files);
   }
 
@@ -208,5 +211,17 @@ export class CretiveProductsController {
   ) {
     const userId = req.userId;
     return this.cretiveProductsService.addComment(id, addCommentDto, userId);
+  }
+  @Get('all/subcategories')
+  async getSubCategories() {
+    return SUB_CATEGORY_ENUM;
+  }
+  @Get('all/filter')
+  async getFilteredProducts(
+    @Query() query: { page?: string; category?: string; subCategory?: string },
+  ): Promise<CreativeProducts[]> {
+    return await this.cretiveProductsService.findProductsWithFiltersPagination(
+      query,
+    );
   }
 }

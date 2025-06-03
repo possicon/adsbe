@@ -11,10 +11,12 @@ describe('CretiveProductsController', () => {
       providers: [CretiveProductsService],
     }).compile();
 
-    controller = module.get<CretiveProductsController>(CretiveProductsController);
+    controller = module.get<CretiveProductsController>(
+      CretiveProductsController,
+    );
   });
 
-  it('should be defined', () => {
+  it('should be defineds', () => {
     expect(controller).toBeDefined();
   });
 });

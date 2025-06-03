@@ -37,6 +37,24 @@ export class CreateCretiveProductDto {
   })
   fileType?: string;
 
+  @IsOptional()
+  @IsString()
+  @IsEnum(
+    [
+      'All Company Sizes',
+      'Brands',
+      'Agencies',
+      'Enterprise',
+      'ScaleUps',
+      'Others',
+    ],
+    {
+      message:
+        'Sub Category must be either All Company Sizes or Brands or Agencies or Enterprise or ScaleUps or Others',
+    },
+  )
+  subCategory?: string;
+
   @IsNotEmpty()
   @IsString()
   category: string;
