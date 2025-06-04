@@ -33,7 +33,7 @@ export class MailService {
         <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);">
             <!-- Header -->
             <div style="text-align: center; padding-bottom: 20px;">
-                <img src="https://aicdn.picsart.com/f8f1f930-4637-4e74-808a-ea23074cc28a.png" alt="Ads.Ng Logo" style="width: 150px; margin-bottom: 20px;" />
+                <img src="https://res.cloudinary.com/dk1hvevsa/image/upload/v1749080731/026028d630a12ce8f94c6b206d636848a218c5e6_wqwkuv.png" alt="Ads.Ng Logo" style="width: 150px; margin-bottom: 20px;" />
                 <h1 style="color: #333; font-size: 24px; margin-bottom: 5px;">Order Confirmed!</h1>
                 <p style="font-size: 16px; color: #777;">Thank you for your purchase, ${firstName}!</p>
             </div>
@@ -96,7 +96,7 @@ export class MailService {
         <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);">
             <!-- Header -->
             <div style="text-align: center; padding-bottom: 20px;">
-                <img src="https://aicdn.picsart.com/f8f1f930-4637-4e74-808a-ea23074cc28a.png" alt="Ads.Ng Logo" style="width: 150px; margin-bottom: 20px;" />
+                <img src="https://res.cloudinary.com/dk1hvevsa/image/upload/v1749080731/026028d630a12ce8f94c6b206d636848a218c5e6_wqwkuv.png" alt="Ads.Ng Logo" style="width: 150px; margin-bottom: 20px;" />
                 <h1 style="color: #333; font-size: 24px; margin-bottom: 5px;">Payment Verified!</h1>
                 <p style="font-size: 16px; color: #777;">Your transaction was successful.</p>
             </div>
@@ -174,7 +174,7 @@ export class MailService {
       html: `
         <div style="font-family: 'Arial', sans-serif; max-width: 700px; margin: auto; padding: 20px; background-color: #fff;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <img src="https://aicdn.picsart.com/f8f1f930-4637-4e74-808a-ea23074cc28a.png" width="150" />
+            <img src="https://res.cloudinary.com/dk1hvevsa/image/upload/v1749080731/026028d630a12ce8f94c6b206d636848a218c5e6_wqwkuv.png" width="150" />
             <h2 style="color: #333;">Payment Invoice</h2>
             <p style="color: #777;">Transaction successful on ${formattedDate}</p>
           </div>
