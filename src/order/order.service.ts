@@ -48,8 +48,12 @@ export class OrderService {
     if (!this.paystackService) {
       throw new Error('PaystackService is not initialized'); // Debugging line
     }
-    const { orderItems, billingInfo, redirect_url, projectDsc } =
-      createOrderDTO;
+    const {
+      orderItems,
+      // billingInfo,
+      redirect_url,
+      projectDsc,
+    } = createOrderDTO;
 
     const user = await this.UserModel.findById(userId);
     if (!user)
@@ -84,14 +88,14 @@ export class OrderService {
     const newOrder = new this.OrderModel({
       userId,
       orderItems,
-      billingInfo,
+      // billingInfo,
       grandTotal,
       redirect_url,
       projectDsc,
       payStackPayment: {
         userId,
         email: user.email,
-        billingInfo,
+        // billingInfo,
         reference: paystackResponse.data.reference,
         authorization_url: paystackResponse.data.authorization_url,
         access_code: paystackResponse.data.access_code,
@@ -128,7 +132,7 @@ export class OrderService {
       authorization_url: paystackResponse.data.authorization_url,
       orderId: newOrder._id,
       orderItems,
-      billingInfo,
+      // billingInfo,
       redirect_url,
       projectDsc,
       userId,

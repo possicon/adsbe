@@ -134,8 +134,8 @@ export class Order extends Document {
   @Prop({ required: true, type: [OrderItems] })
   orderItems: OrderItems[];
 
-  @Prop({ required: false })
-  billingInfo: BillingInfo;
+  // @Prop({ required: false })
+  // billingInfo: BillingInfo;
 
   @Prop({ required: false })
   payStackPayment: Paystack;

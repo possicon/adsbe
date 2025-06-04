@@ -57,8 +57,8 @@ export class CreateOrderDto {
   @Type(() => OrderItemDTO)
   orderItems: OrderItemDTO[];
 
-  @IsObject()
-  @ValidateNested()
-  @Type(() => BillingInfoDTO)
-  billingInfo: BillingInfoDTO;
+  // @IsObject()
+  // @ValidateNested()
+  // @Type(() => BillingInfoDTO)
+  // billingInfo: BillingInfoDTO;
 }
