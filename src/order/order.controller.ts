@@ -23,6 +23,7 @@ import { Query as ExpressQuery } from 'express-serve-static-core';
 import { AddCommentDto } from './dto/AddOrderComment.dto';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { AddProjectDescDto } from './dto/projectDescription.dto';
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
@@ -174,6 +175,36 @@ export class OrderController {
     return this.orderService.addCommentFormData(
       id,
       addCommentDto,
+      userId,
+      file,
+    );
+  }
+  @UseGuards(UserAuthGuard)
+  @Patch(':id/comment')
+  @UseInterceptors(
+    FileInterceptor('fileUrl', {
+      limits: { fileSize: 50 * 1024 * 1024 },
+      storage: diskStorage({
+        destination: './FileUploads',
+        filename: (req, file, cb) => {
+          const sanitized = file.originalname
+            .replace(/\s+/g, '')
+            .replace(/[^a-zA-Z0-9.-]/g, '');
+          cb(null, `${Date.now()}-${sanitized}`);
+        },
+      }),
+    }),
+  )
+  async addProductDescriptionFormData(
+    @Param('id') id: string,
+    @Body() addProjectDescDto: AddProjectDescDto,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req,
+  ) {
+    const userId = req.userId;
+    return this.orderService.addprojectDescriptionFormData(
+      id,
+      addProjectDescDto,
       userId,
       file,
     );

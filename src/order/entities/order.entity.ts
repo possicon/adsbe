@@ -16,6 +16,21 @@ export class OrderItems {
 }
 
 @Schema({ timestamps: true })
+export class projectDescription {
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  userId: Types.ObjectId;
+
+  @Prop({ required: false })
+  desc: string;
+
+  @Prop({ required: false })
+  fileUrl: string;
+
+  @Prop({ type: Date, default: Date.now })
+  createdAt: Date;
+}
+
+@Schema({ timestamps: true })
 export class Comment {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
@@ -157,6 +172,9 @@ export class Order extends Document {
 
   @Prop([{ type: Comment }])
   comments: Comment[];
+
+  @Prop([{ type: projectDescription }])
+  projectDesc: projectDescription[];
 
   @Prop([{ type: DeliveryComment }])
   deliveryComment: DeliveryComment[];

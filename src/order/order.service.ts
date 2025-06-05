@@ -21,6 +21,7 @@ import { AdminUser } from 'src/admin/entities/admin.entity';
 const ImageKit = require('imagekit');
 import * as fs from 'fs';
 import { MailService } from './Services/mail.service';
+import { AddProjectDescDto } from './dto/projectDescription.dto';
 @Injectable()
 export class OrderService {
   private readonly logger = new Logger(PaystackService.name);
@@ -640,6 +641,48 @@ export class OrderService {
     };
 
     addComment.comments.push(newComment);
+    return await addComment.save();
+  }
+
+  async addprojectDescriptionFormData(
+    id: string,
+    addProjectDescDto: AddProjectDescDto,
+    userId: string,
+    file?: Express.Multer.File,
+  ) {
+    const addComment = await this.OrderModel.findById(id);
+    if (!addComment) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const customer = await this.OrderModel.findOne({ userId });
+
+    if (!customer) {
+      throw new NotFoundException(
+        'Only Customer for the order is permitted to add a project description',
+      );
+    }
+    let imageUrl: string | undefined;
+    if (file) {
+      try {
+        const filePath = `${process.env.Base_Url || process.env.Base_Url_Local}/uploads/${file.filename}`;
+        // PicsUrl.push(filePath);
+        imageUrl = filePath;
+        addProjectDescDto.fileUrl = imageUrl;
+      } catch (error) {
+        console.error('File Save Error:', error);
+        throw new BadRequestException('Error saving file(s)');
+      }
+    }
+
+    const newComment: any = {
+      userId: userId,
+      desc: addProjectDescDto.desc,
+      fileUrl: addProjectDescDto.fileUrl,
+      createdAt: new Date(),
+    };
+
+    addComment.projectDesc.push(newComment);
     return await addComment.save();
   }
 }
