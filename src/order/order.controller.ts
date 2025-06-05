@@ -180,7 +180,7 @@ export class OrderController {
     );
   }
   @UseGuards(UserAuthGuard)
-  @Patch(':id/comment')
+  @Patch(':id/project-desc')
   @UseInterceptors(
     FileInterceptor('fileUrl', {
       limits: { fileSize: 50 * 1024 * 1024 },
